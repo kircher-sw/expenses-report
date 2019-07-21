@@ -1,5 +1,5 @@
 # expenses-visualizer
-Keep track of your personal expenses.
+Keeps track of your personal expenses.
 * visualizes your expenses by different categories
 * automatically assigns categories to your expenses
 * define your own categories
