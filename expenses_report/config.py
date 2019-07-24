@@ -9,29 +9,23 @@ PAYMENT_REASON_COL = 'paymentreason'
 RECIPIENT_COL = 'recipient'
 
 import_mapping = {
-    ACCOUNT_NO_COL: ['Auftragskonto', 'Kontonummer'],
-    DATE_COL: ['Valutadatum', 'Buchungstag', 'Valuta'],
-    AMOUNT_COL: ['Betrag', 'Betrag (EUR)'],
-    PAYMENT_REASON_COL: ['Verwendungszweck'],
-    RECIPIENT_COL: ['Beguenstigter/Zahlungspflichtiger', 'Auftraggeber / Begünstigter', 'Name']
+    ACCOUNT_NO_COL: ['Account No', 'Auftragskonto', 'Kontonummer'],
+    DATE_COL: ['Date', 'Valutadatum', 'Buchungstag', 'Valuta'],
+    AMOUNT_COL: ['Amount', 'Betrag', 'Betrag (EUR)'],
+    PAYMENT_REASON_COL: ['Payment Reason', 'Verwendungszweck'],
+    RECIPIENT_COL: ['Recipient', 'Beguenstigter/Zahlungspflichtiger', 'Auftraggeber / Begünstigter', 'Name']
 }
 
 
-INCOME_CATEGORY = 'Einkommen'
-MISC_CATEGORY = 'Sonstiges'
+INCOME_CATEGORY = 'Income'
+MISC_CATEGORY = 'Misc'
 
 categories = {
     INCOME_CATEGORY: None,
-    'Wohnung': ['Miete', 'Rundfunk'],
-    'Auto': ['Kfz-Steuer', 'KFZ-VERSICHERUNG', 'Tankstelle', 'JET', 'Aral', 'Esso', 'Shell', 'Total'],
-    'Versicherung': ['HUK', 'HUK24'],
-    'Lebensmittel': ['BONUS', 'REWE', 'Kaufland', 'Aldi', 'Edeka', 'Lidl'],
-    'Urlaub': ['TUI', 'Hotel'],
-    'Bahn': ['DB VERTRIEB', 'DEUTSCHE BAHN', 'LogPay'],
-    'Anschaffung': ['Amazon', 'ALTERNATE', 'MEDIA MARKT'],
-    'Bargeld': ['BW-Bank', 'Landesbank BW', 'Bargeld'],
-    'Spende': ['Spende'],
-    'Sparen': ['Sparen'],
+    'Dwelling': ['Rent', 'Miete', 'Rundfunk'],
+    'Car': ['Fuel', 'Garage', 'Kfz-Steuer', 'KFZ-VERSICHERUNG', 'Tankstelle', 'JET', 'Aral', 'Esso', 'Shell', 'Total'],
+    'Insurance': ['Insurance', 'HUK', 'HUK24'],
+    'Grocery': ['Grocery', 'REWE', 'Kaufland', 'Aldi', 'Edeka', 'Lidl'],
     MISC_CATEGORY: None,
 }
 
