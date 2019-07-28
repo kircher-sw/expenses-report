@@ -88,7 +88,7 @@ class TransactionPreprocessor(object):
     def preprocess_by_year(self):
         result = dict()
         df_out = self.get_dataframe_of_out_transactions()
-        df_out_agg_years = df_out.groupby([df_out.index.year, self.CATEGORY_COL]).absamount.sum()
+        df_out_agg_years = df_out.groupby([df_out.index.year, self.CATEGORY_COL])[self.ABSAMOUNT_COL].sum()
 
         years = list(df_out_agg_years.index.levels[0].values)
         for year in years:
