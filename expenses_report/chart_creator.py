@@ -74,11 +74,34 @@ class ChartCreator(object):
         layout['xaxis'] = {**current_xaxis, **new_xaxis}
 
     @staticmethod
-    def create_pie_plot(year, total, labels, values):
-        pie_trace = go.Pie(labels=labels,
-                           values=values,
-                           hole=0.3,
-                           title=f'{year}<br>{total:.2f} {config.CURRENCY}',
-                           textinfo='label+value+percent',
-                           textposition='inside')
-        return plotly.offline.plot(dict(data=[pie_trace]), output_type='div', include_plotlyjs=False)
+    def create_pie_plot(results):
+        # create pie charts for each year
+        fig = go.Figure()
+        for year in results.keys():
+            total, labels, values = results[year]
+            pie_trace = go.Pie(visible=year == max(results.keys()),
+                               name=str(year),
+                               labels=labels,
+                               values=values,
+                               hole=0.3,
+                               title=f'{year}<br>{total:.2f} {config.CURRENCY}',
+                               textinfo='label+value+percent',
+                               textposition='inside')
+            fig.add_trace(pie_trace)
+
+        # create and add slider
+        steps = list()
+        for i in range(len(fig.data)):
+            step = dict(label=fig.data[i].name,
+                        method='restyle',
+                        args=['visible', [False] * len(fig.data)])
+            step['args'][1][i] = True # Toggle i'th trace to "visible"
+            steps.append(step)
+
+        slider = dict(active=len(fig.data) - 1,
+                      currentvalue={'prefix': 'Year: '},
+                      steps=steps)
+
+        fig.layout.update(sliders=[slider])
+
+        return plotly.offline.plot(fig, output_type='div', include_plotlyjs=False)

@@ -30,9 +30,7 @@ class ExpensesReport(object):
 
     def create_pie_chart_with_categories_by_year(self):
         results = self._ta_preprocessor.preprocess_by_year()
-        max_year = max(results.keys())
-        max_year_data = results[max_year]
-        self._pie_year = ChartCreator.create_pie_plot(max_year, max_year_data[0], max_year_data[1], max_year_data[2])
+        self._pie_year = ChartCreator.create_pie_plot(results)
 
     def create_stacked_area_with_cumulative_categories(self):
         x_axes, cumulative_categories = self._ta_preprocessor.preprocess_cumulative_categories()
