@@ -12,7 +12,7 @@ Keeps track of your personal expenses.
 * Plotly
 
 ## Example
-For an interactive report demonstration see [sample/sample-report.html](sample/sample-report.html)
+For an interactive report demonstration see [sample/sample-report.html](https://kircher-sw.github.io/expenses-report/sample/sample-report.html)
 
 ### Categories grouped by month
 ![Categories by month](sample/category-month.png "expenses-report Categories by month")
