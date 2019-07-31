@@ -13,7 +13,7 @@ class ChartCreator(object):
             trace_category = go.Scatter(x=x_axes,
                                         y=values_all_categories[category_name],
                                         name=config.INCOME_CATEGORY,
-                                        line=config.income_line_style) \
+                                        line=config.INCOME_LINE_STYLE) \
                              if category_name == config.INCOME_CATEGORY else \
                              go.Scatter(x=x_axes,
                                         y=values_all_categories[category_name],
@@ -24,7 +24,7 @@ class ChartCreator(object):
 
         traces = ChartCreator._sort_legend_by_config_order(traces_unsorted)
 
-        layout = dict(yaxis=dict(title=config.CURRENCY))
+        layout = dict(yaxis=dict(title=config.CURRENCY_LABEL))
         x_axes_layout = ChartCreator._get_x_axes_layout(x_axes)
         if x_axes_layout:
             layout['xaxis'] = x_axes_layout
@@ -84,7 +84,7 @@ class ChartCreator(object):
                                labels=labels,
                                values=values,
                                hole=0.3,
-                               title=f'{year}<br>{total:.2f} {config.CURRENCY}',
+                               title=f'{year}<br>{total:.2f} {config.CURRENCY_LABEL}',
                                textinfo='label+value+percent',
                                textposition='inside')
             fig.add_trace(pie_trace)
@@ -100,6 +100,7 @@ class ChartCreator(object):
 
         slider = dict(active=len(fig.data) - 1,
                       currentvalue={'prefix': 'Year: '},
+                      pad={'t': 0}, # vertical distance to chart
                       steps=steps)
 
         fig.layout.update(sliders=[slider])

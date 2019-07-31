@@ -70,30 +70,43 @@ def calculate_charts():
 
 
 def write_report():
-    f = open('expenses.html', 'w')
-    f.write('<html>'
+    html = ('<html>'
             '<head><meta charset="utf-8" />'
             '<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>'
             '<style>'
+            'body { font-family: "Open Sans", verdana, arial, sans-serif; margin: 10px auto; max-width: 1400px; }'
+            '.chart-div { height: 600px; }'
             '* { box-sizing: border-box; }'
             '.column { float: left; width: 50%; padding: 10px; }'
             '.row:after { content: ""; display: table; clear: both; }'
             '</style>'
             '</head>'
-            '<body>')
-    f.write(_expenses_report._stacked_area_month)
-    f.write('<div class="row">'
-            '<div class="column">')
-    f.write(_expenses_report._stacked_area_year)
-    f.write('</div>'
-            '<div class="column">')
-    f.write(_expenses_report._pie_year)
-    f.write('</div>'
-            '</div>')
-    f.write(_expenses_report._cumulative_categories)
-    #f.write(df_all.to_html().replace('<table border="1" class="dataframe">', '<table class="table table-striped">'))
-    f.write('</body>'
-            '</html>')
+            '<body>'
+            '<div class="chart-div">'
+            '<h3>Monthly expenses</h3>')
+    html += _expenses_report._stacked_area_month
+    html += ('</div><br>'
+             '<div class="chart-div">'
+             '<div class="row">'
+             '<h3>Annual expenses</h3>'
+             '<div class="column">')
+    html += _expenses_report._stacked_area_year
+    html += ('</div>'
+             '<div class="column">')
+    html += _expenses_report._pie_year
+    html += ('</div>'
+             '</div>'
+             '</div>'
+             '<div class="chart-div">'
+             '<h3>Accumulated expenses</h3>')
+    html += _expenses_report._cumulative_categories
+    #html += f.write(df_all.to_html().replace('<table border="1" class="dataframe">', '<table class="table table-striped">'))
+    html += ('</div>'
+             '</body>'
+             '</html>')
+
+    f = open(config.OUT_FILE, 'w')
+    f.write(html)
     f.close()
 
 
