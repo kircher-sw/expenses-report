@@ -1,7 +1,15 @@
+"""
+Config for expenses-report
+"""
 
+
+# Path to the csv files from your bank account. All csv files from this path will be read and processed.
 CSV_FILES_PATH = 'sample'
 
+OUT_FILE = 'expenses-report.html'
 
+
+# Csv column identifiers (do not modify)
 ACCOUNT_NO_COL = 'accountno'
 DATE_COL = 'date'
 AMOUNT_COL = 'amount'
@@ -30,6 +38,6 @@ categories = {
 }
 
 
-CURRENCY = 'EUR'
-
-income_line_style = dict(color=('rgb(22, 167, 96)'), width=4)
+# UI related settings
+CURRENCY_LABEL = 'EUR'
+INCOME_LINE_STYLE = dict(color=('rgb(22, 167, 96)'), width=4)
