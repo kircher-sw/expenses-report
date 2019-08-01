@@ -6,6 +6,15 @@ Keeps track of your personal expenses.
 * define your own categories
 * outputs an interactive html report
 
+---
+
+## Table of Contents
+1. [Requirements](#requirements)
+1. [Example](#example)
+1. [Usage](#usage)
+
+---
+
 ## Requirements
 * Python 3.x
 * Pandas
@@ -25,3 +34,15 @@ For an interactive report demonstration see [sample/sample-report.html](https://
 
 ### All transactions cumulated by categories
 ![Categories cumulated](sample/category-cumulated.png "expenses-report cumulated by categories")
+
+## Usage
+1. Clone repository
+2. Adapt the file **expenses_report/config.py**
+  * define path to folder with csv files (either absolute or relative to project)
+  ```python
+  CSV_FILES_PATH = 'sample'
+  ```
+  * specify column names of csv files
+  * define categories with keywords
+3. execute **run.py**
+
