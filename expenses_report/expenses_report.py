@@ -21,20 +21,20 @@ class ExpensesReport(object):
         self._ta_preprocessor.set_transactions(self._transactions)
 
     def create_stacked_area_chart_with_month_frequency(self):
-        x_axes, values_all_categories = self._ta_preprocessor.preprocess_by_category('M')
-        self._stacked_area_month = ChartCreator.create_stacked_area_plot(x_axes, values_all_categories, show_range_selectors=True)
+        x_axis, values_all_categories = self._ta_preprocessor.aggregate_by_category('M')
+        self._stacked_area_month = ChartCreator.create_stacked_area_plot(x_axis, values_all_categories, show_range_selectors=True)
 
     def create_stacked_area_chart_with_year_frequency(self):
-        x_axes, values_all_categories = self._ta_preprocessor.preprocess_by_category('Y')
-        self._stacked_area_year = ChartCreator.create_stacked_area_plot(x_axes, values_all_categories)
+        x_axis, values_all_categories = self._ta_preprocessor.aggregate_by_category('Y')
+        self._stacked_area_year = ChartCreator.create_stacked_area_plot(x_axis, values_all_categories)
 
     def create_pie_chart_with_categories_by_year(self):
         results = self._ta_preprocessor.preprocess_by_year()
         self._pie_year = ChartCreator.create_pie_plot(results)
 
     def create_stacked_area_with_cumulative_categories(self):
-        x_axes, cumulative_categories = self._ta_preprocessor.preprocess_cumulative_categories()
-        self._cumulative_categories = ChartCreator.create_stacked_area_plot(x_axes, cumulative_categories)
+        x_axis, cumulative_categories = self._ta_preprocessor.preprocess_cumulative_categories()
+        self._cumulative_categories = ChartCreator.create_stacked_area_plot(x_axis, cumulative_categories)
 
 
 _expenses_report = ExpensesReport()
