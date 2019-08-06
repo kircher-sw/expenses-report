@@ -49,7 +49,7 @@ class TransactionPreprocessor(object):
         return self._df_out
 
 
-    def preprocess_by_category(self, aggregation_period='M'):
+    def aggregate_by_category(self, aggregation_period='M'):
         '''
         Preprocesses the transactions and groups them by category and the given aggregation period
         :param aggregation_period: 'M' group by month
@@ -62,7 +62,7 @@ class TransactionPreprocessor(object):
         end_date = df_all.index.max().to_period(aggregation_period).end_time.date()
         range_of_all_dates = pd.date_range(start=df_all.index.min(), end=end_date, freq=aggregation_period)
         df_all_dates = range_of_all_dates.to_period().to_frame(name=self.DATETIME_COL)
-        x_axes = list(map(lambda p: p.to_timestamp(), df_all_dates.index.values))
+        x_axis = list(map(lambda p: p.to_timestamp(), df_all_dates.index.values))
 
         values_all_categories = dict()
 
@@ -82,7 +82,7 @@ class TransactionPreprocessor(object):
             values_out_category = result.fillna(0)[self.ABSAMOUNT_COL].values
             values_all_categories[category_name] = values_out_category
 
-        return (x_axes, values_all_categories)
+        return (x_axis, values_all_categories)
 
 
     def preprocess_by_year(self):
@@ -105,13 +105,13 @@ class TransactionPreprocessor(object):
 
     def preprocess_cumulative_categories(self):
         df_all = self.get_dataframe_of_all_transactions()
-        x_axes = list(map(lambda date: date, df_all.resample('D').sum().index))
+        x_axis = list(map(lambda date: date, df_all.resample('D').sum().index))
         cumulative_categories = dict()
         for category_name in reversed(list(config.categories.keys())):
             df_category = df_all[df_all.category == category_name]
             df_category = df_category.resample('D').sum().reindex(df_all.index).resample('D').max().fillna(0)
 
-            values = list(df_category.absamount.cumsum())
+            values = list(df_category[self.ABSAMOUNT_COL].cumsum())
             cumulative_categories[category_name] = values
 
-        return (x_axes, cumulative_categories)
+        return (x_axis, cumulative_categories)
