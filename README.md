@@ -16,8 +16,8 @@ Keeps track of your personal expenses.
 
 ## Requirements
 * Python >= 3.6
-* Pandas >= 0.25.0
-* Plotly >= 4.1.0
+* Pandas >= 0.24.2
+* Plotly >= 3.8.1
 
 ## Example
 For an interactive report demonstration see [sample/sample-report.html](https://kircher-sw.github.io/expenses-report/sample/sample-report.html)
