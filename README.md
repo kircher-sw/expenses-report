@@ -1,7 +1,7 @@
 # expenses-report
 Keeps track of your personal expenses.
 * visualizes your expenses by self defined categories
-* reads transactions from csv files exported from your bank account
+* reads transactions from CSV files exported from your bank account
 * automatically assigns categories to your expenses
 * outputs an interactive html report
 
