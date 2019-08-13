@@ -49,7 +49,7 @@ class TransactionPreprocessor(object):
         return self._df_out
 
 
-    def aggregate_by_category(self, aggregation_period='M'):
+    def aggregate_transactions_by_category(self, aggregation_period='M'):
         '''
         Preprocesses the transactions and groups them by category and the given aggregation period
         :param aggregation_period: 'M' group by month
@@ -66,12 +66,12 @@ class TransactionPreprocessor(object):
 
         values_all_categories = dict()
 
-        # REVENUES
+        # income
         df_in = self.get_dataframe_of_in_transactions()
         df_in = df_in.resample(aggregation_period).sum().reindex(range_of_all_dates).fillna(0)
         values_all_categories[config.INCOME_CATEGORY] = df_in[self.ABSAMOUNT_COL].values
 
-        # EXPENSES
+        # expenses
         df_out = self.get_dataframe_of_out_transactions()
         df_out_agg = df_out.groupby([pd.DatetimeIndex(df_out[self.DATETIME_COL]).to_period(aggregation_period),
                                      self.CATEGORY_COL])[self.ABSAMOUNT_COL].sum()
@@ -85,7 +85,7 @@ class TransactionPreprocessor(object):
         return (x_axis, values_all_categories)
 
 
-    def preprocess_by_year(self):
+    def aggregate_expenses_by_year(self):
         result = dict()
         df_out = self.get_dataframe_of_out_transactions()
         df_out_agg_years = df_out.groupby([df_out.index.year, self.CATEGORY_COL])[self.ABSAMOUNT_COL].sum()
@@ -103,7 +103,7 @@ class TransactionPreprocessor(object):
         return result
 
 
-    def preprocess_cumulative_categories(self):
+    def accumulate_categories(self):
         df_all = self.get_dataframe_of_all_transactions()
         x_axis = list(map(lambda date: date, df_all.resample('D').sum().index))
         cumulative_categories = dict()
