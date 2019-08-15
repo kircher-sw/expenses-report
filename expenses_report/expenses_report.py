@@ -12,9 +12,6 @@ class ExpensesReport(object):
     _ta_preprocessor = TransactionPreprocessor()
     _charts = list()
 
-    def __init__(self):
-        pass
-
     def transactions_updated(self):
         self._ta_preprocessor.set_transactions(self._transactions)
 
@@ -40,8 +37,8 @@ _expenses_report = ExpensesReport()
 
 def import_csv_files():
     importer = CsvImporter()
-    importer.import_csv_files()
-    _expenses_report._transactions = importer.transactions
+    transactions = importer.import_from_csv_files()
+    _expenses_report._transactions = transactions
 
 
 def assign_category_to_transactions():
@@ -72,4 +69,3 @@ def calculate_charts():
 
 def write_report():
     HtmlReport.create(_expenses_report._charts)
-

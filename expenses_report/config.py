@@ -8,6 +8,8 @@ Only modify text within '...'
 # Path to the CSV files from your bank account. All CSV files from this path will be read and processed.
 CSV_FILES_PATH = 'sample'
 
+CSV_DELIMITER = ';'
+
 OUT_FILE = 'expenses-report.html'
 
 

@@ -1,7 +1,6 @@
 import pandas as pd
-from expenses_report import config
 
-pd.options.mode.chained_assignment = None  # default='warn'
+from expenses_report import config
 
 
 class TransactionPreprocessor(object):
@@ -21,33 +20,6 @@ class TransactionPreprocessor(object):
         self._transactions = transactions
         self._df_all = self._df_in = self._df_out = None
 
-    def rebuild_dataframes(self):
-        # create DataFrame from imported transactions
-        ta_tuples = list(map(lambda ta: ta.as_tuple(), self._transactions))
-        self._df_all = pd.DataFrame.from_records(data=ta_tuples, columns=self._columns, index=config.DATE_COL)
-        self._df_all[self.ABSAMOUNT_COL] = self._df_all.amount.apply(abs)
-
-        self._df_in = self._df_all[self._df_all.category == config.INCOME_CATEGORY]
-
-        self._df_out = self._df_all[self._df_all.category != config.INCOME_CATEGORY]
-        self._df_out[self.DATETIME_COL] = pd.to_datetime(self._df_out.index)
-
-
-    def get_dataframe_of_all_transactions(self):
-        if self._df_all is None:
-            self.rebuild_dataframes()
-        return self._df_all
-
-    def get_dataframe_of_in_transactions(self):
-        if self._df_in is None:
-            self.rebuild_dataframes()
-        return self._df_in
-
-    def get_dataframe_of_out_transactions(self):
-        if self._df_out is None:
-            self.rebuild_dataframes()
-        return self._df_out
-
 
     def aggregate_transactions_by_category(self, aggregation_period='M'):
         '''
@@ -58,7 +30,7 @@ class TransactionPreprocessor(object):
         '''
 
         # create full range of date values with the given period
-        df_all = self.get_dataframe_of_all_transactions()
+        df_all = self._get_dataframe_of_all_transactions()
         end_date = df_all.index.max().to_period(aggregation_period).end_time.date()
         range_of_all_dates = pd.date_range(start=df_all.index.min(), end=end_date, freq=aggregation_period)
         df_all_dates = range_of_all_dates.to_period().to_frame(name=self.DATETIME_COL)
@@ -67,12 +39,12 @@ class TransactionPreprocessor(object):
         values_all_categories = dict()
 
         # income
-        df_in = self.get_dataframe_of_in_transactions()
+        df_in = self._get_dataframe_of_in_transactions()
         df_in = df_in.resample(aggregation_period).sum().reindex(range_of_all_dates).fillna(0)
         values_all_categories[config.INCOME_CATEGORY] = df_in[self.ABSAMOUNT_COL].values
 
         # expenses
-        df_out = self.get_dataframe_of_out_transactions()
+        df_out = self._get_dataframe_of_out_transactions()
         df_out_agg = df_out.groupby([pd.DatetimeIndex(df_out[self.DATETIME_COL]).to_period(aggregation_period),
                                      self.CATEGORY_COL])[self.ABSAMOUNT_COL].sum()
 
@@ -87,7 +59,7 @@ class TransactionPreprocessor(object):
 
     def aggregate_expenses_by_year(self):
         result = dict()
-        df_out = self.get_dataframe_of_out_transactions()
+        df_out = self._get_dataframe_of_out_transactions()
         df_out_agg_years = df_out.groupby([df_out.index.year, self.CATEGORY_COL])[self.ABSAMOUNT_COL].sum()
 
         years = list(df_out_agg_years.index.levels[0].values)
@@ -104,7 +76,7 @@ class TransactionPreprocessor(object):
 
 
     def accumulate_categories(self):
-        df_all = self.get_dataframe_of_all_transactions()
+        df_all = self._get_dataframe_of_all_transactions()
         x_axis = list(map(lambda date: date, df_all.resample('D').sum().index))
         cumulative_categories = dict()
         for category_name in reversed(list(config.categories.keys())):
@@ -115,3 +87,30 @@ class TransactionPreprocessor(object):
             cumulative_categories[category_name] = values
 
         return (x_axis, cumulative_categories)
+
+
+    def _rebuild_dataframes(self):
+        # create DataFrame from imported transactions
+        ta_tuples = list(map(lambda ta: ta.as_tuple(), self._transactions))
+        self._df_all = pd.DataFrame.from_records(data=ta_tuples, columns=self._columns, index=config.DATE_COL)
+        self._df_all[self.ABSAMOUNT_COL] = self._df_all.amount.apply(abs)
+        self._df_all[self.DATETIME_COL] = pd.to_datetime(self._df_all.index)
+
+        self._df_in = self._df_all[self._df_all.category == config.INCOME_CATEGORY]
+
+        self._df_out = self._df_all[self._df_all.category != config.INCOME_CATEGORY]
+
+    def _get_dataframe_of_all_transactions(self):
+        if self._df_all is None:
+            self._rebuild_dataframes()
+        return self._df_all
+
+    def _get_dataframe_of_in_transactions(self):
+        if self._df_in is None:
+            self._rebuild_dataframes()
+        return self._df_in
+
+    def _get_dataframe_of_out_transactions(self):
+        if self._df_out is None:
+            self._rebuild_dataframes()
+        return self._df_out

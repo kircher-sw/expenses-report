@@ -9,30 +9,31 @@ from expenses_report.transaction import Transaction
 
 class CsvImporter(object):
 
-    def __init__(self):
-        self.unique_transactions = set()
-        self.transactions = list()
-
-    def import_csv_files(self):
+    def import_from_csv_files(self):
+        unique_transactions = set()
         file_names = [fn for fn in os.listdir(config.CSV_FILES_PATH) if fn.lower().endswith('.csv')]
         for file in file_names:
-            self.import_from_csv_file(os.path.join(config.CSV_FILES_PATH, file))
+            filepath = os.path.join(config.CSV_FILES_PATH, file)
+            transactions = self.import_from_csv_file(filepath)
+            unique_transactions = unique_transactions.union(transactions)
 
-    def import_from_csv_file(self, filename):
-        with open(filename, newline='') as csvfile:
-            csv_reader = csv.reader(csvfile, delimiter=';')
+        return CsvImporter.sort_by_date(unique_transactions)
+
+    def import_from_csv_file(self, filepath):
+        unique_transactions = set()
+        with open(filepath, newline='') as csvfile:
+            csv_reader = csv.reader(csvfile, delimiter=config.CSV_DELIMITER)
             column_indices = None
             for row in csv_reader:
                 if not column_indices: # first row with column names
                     if len(row) >= len(config.import_mapping.keys()):
-                        column_indices = self.build_column_mapping(row)
+                        column_indices = CsvImporter.build_column_mapping(row)
                 else:
-                    ta = self.build_transaction(column_indices, row)
+                    ta = CsvImporter.build_transaction(column_indices, row)
                     if ta.is_valid():
-                        self.unique_transactions.add(ta)
+                        unique_transactions.add(ta)
 
-        self.transactions = list(self.unique_transactions)
-        self.transactions.sort(key=lambda ta: ta.date)
+        return CsvImporter.sort_by_date(unique_transactions)
 
     @staticmethod
     def build_column_mapping(header_row):
@@ -56,3 +57,8 @@ class CsvImporter(object):
         ta.recipient = re.sub(r'  +', ' ', row[column_indices[config.RECIPIENT_COL]].strip())
         return ta
 
+    @staticmethod
+    def sort_by_date(unique_transactions):
+        transactions = list(unique_transactions)
+        transactions.sort(key=lambda ta: ta.date)
+        return transactions
