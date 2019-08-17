@@ -10,14 +10,15 @@ class HtmlReport(object):
 
     @staticmethod
     def create(charts):
-        html_template = HtmlReport._load_html_template(os.path.join('resources', 'expenses-report-layout.html'))
+        html_template = HtmlReport._load_html_template()
         html_report = HtmlReport._build_html_report(html_template, charts)
         HtmlReport._write_file(html_report)
 
 
     @staticmethod
-    def _load_html_template(file):
-        with open(file, 'r') as html_template:
+    def _load_html_template():
+        template_path = os.path.join('resources', 'expenses-report-layout.html')
+        with open(template_path, 'r') as html_template:
             html = html_template.read()
         return html
 
@@ -30,7 +31,7 @@ class HtmlReport(object):
         for chart_div in divs:
             html_report = html_report.replace(HtmlReport.chart_placeholder, chart_div, 1)
 
-        # put chart rendering scripts at end of html document to have correct sizes in css layout items
+        # put chart rendering scripts to the end of the html document to have correct sizes in css layout items
         all_scripts = '\n'.join(scripts)
         html_report = html_report.replace(HtmlReport.script_placeholder, all_scripts)
 

@@ -6,11 +6,23 @@ from expenses_report.transaction import Transaction
 class CategoryFinder(object):
 
     def assign_category(self, transactions):
+        """
+        Assigns a category to each transaction.
+        :param transactions:
+        :return:
+        """
         for ta in transactions:
             ta.category = self.find_category(ta)
 
 
     def find_category(self, transaction: Transaction):
+        """
+        Finds a matching category for the given transaction.
+        If the amount of the transaction is positive, the INCOME category is returned, otherwise the first category with
+        a matching keyword is used. If no matching keyword could be found the MISC category is used.
+        :param transaction:
+        :return:
+        """
         category = None
 
         if not transaction.is_expense():

@@ -21,12 +21,12 @@ class TransactionPreprocessor(object):
 
 
     def aggregate_transactions_by_category(self, aggregation_period='M'):
-        '''
-        Preprocesses the transactions and groups them by category and the given aggregation period
+        """
+        Aggregates the transactions by category and the given aggregation period
         :param aggregation_period: 'M' group by month
                                    'Y' group by year
-        :return:
-        '''
+        :return: [date range], { category1-name: [category1 values], ... }
+        """
 
         # create full range of date values with the given period
         df_all = self._get_dataframe_of_all_transactions()
@@ -56,6 +56,10 @@ class TransactionPreprocessor(object):
 
 
     def aggregate_expenses_by_year(self):
+        """
+        Aggregates all expenses by category and year and calculates a total for each year.
+        :return: { year: (total, [category names], [category values]), ... }
+        """
         result = dict()
         df_out = self._get_dataframe_of_out_transactions()
         df_out_agg_years = df_out.groupby([df_out.index.year, self.CATEGORY_COL])[self.ABSAMOUNT_COL].sum()
@@ -74,6 +78,10 @@ class TransactionPreprocessor(object):
 
 
     def accumulate_categories(self):
+        """
+        Accumulates all transactions by category
+        :return: [date range], { category1-name: [category1 values], ... }
+        """
         df_all = self._get_dataframe_of_all_transactions()
         x_axis = list(map(lambda date: date, df_all.resample('D').sum().index))
         cumulative_categories = dict()
