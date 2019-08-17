@@ -10,18 +10,21 @@ class Transaction(object):
     category = ''
 
     def __init__(self, account_no='', date=None, amount=0.0, payment_reason='', recipient='', category=''):
-        self.account_no = account_no
         self.date = date
         self.amount = amount
         self.payment_reason = payment_reason
         self.recipient = recipient
         self.category = category
+        self.set_account_no(account_no)
 
     def is_valid(self):
         return self.date is not None and self.amount is not None
 
     def is_expense(self):
         return self.amount < 0
+
+    def set_account_no(self, account_raw):
+        self.account_no = account_raw.rjust(22, '0')  # fill up with 0s to length of IBAN
 
     def get_short_account_no(self):
         return self.account_no[-10:]

@@ -32,7 +32,20 @@ class TestCsvImport(unittest.TestCase):
         self.assertEqual(1, ta.date.day)
         self.assertEqual(2, ta.date.month)
         self.assertEqual(2019, ta.date.year)
-        self.assertEqual('0000123456', ta.account_no)
+        self.assertEqual('0000000000000000123456', ta.account_no)
+        self.assertEqual('Fuel', ta.payment_reason)
+        self.assertEqual('Aral', ta.recipient)
+        self.assertEqual(-50.0, ta.amount)
+
+    def test_build_transaction_with_missing_optional_column(self):
+        column_map = { config.DATE_COL: 0, config.PAYMENT_REASON_COL: 2, config.RECIPIENT_COL: 3, config.AMOUNT_COL: 4 }
+        ta_row = ['01.02.2019', '123456', 'Fuel', 'Aral', '-50']
+        csv_reader = CsvImporter()
+        ta = csv_reader.build_transaction(column_map, ta_row)
+        self.assertEqual(1, ta.date.day)
+        self.assertEqual(2, ta.date.month)
+        self.assertEqual(2019, ta.date.year)
+        self.assertEqual('0000000000000000000000', ta.account_no)
         self.assertEqual('Fuel', ta.payment_reason)
         self.assertEqual('Aral', ta.recipient)
         self.assertEqual(-50.0, ta.amount)
