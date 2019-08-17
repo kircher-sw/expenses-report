@@ -6,7 +6,6 @@ from expenses_report import config
 class TransactionPreprocessor(object):
     CATEGORY_COL = 'category'
     ABSAMOUNT_COL = 'absamount'
-    DATETIME_COL = 'datetime'
     _transactions = list()
     _columns = None
     _df_all = None
@@ -33,7 +32,7 @@ class TransactionPreprocessor(object):
         df_all = self._get_dataframe_of_all_transactions()
         end_date = df_all.index.max().to_period(aggregation_period).end_time.date()
         range_of_all_dates = pd.date_range(start=df_all.index.min(), end=end_date, freq=aggregation_period)
-        df_all_dates = range_of_all_dates.to_period().to_frame(name=self.DATETIME_COL)
+        df_all_dates = range_of_all_dates.to_period().to_frame(name=config.DATE_COL)
         x_axis = list(map(lambda p: p.to_timestamp(), df_all_dates.index.values))
 
         values_all_categories = dict()
@@ -45,12 +44,11 @@ class TransactionPreprocessor(object):
 
         # expenses
         df_out = self._get_dataframe_of_out_transactions()
-        df_out_agg = df_out.groupby([pd.DatetimeIndex(df_out[self.DATETIME_COL]).to_period(aggregation_period),
+        df_out_agg = df_out.groupby([pd.DatetimeIndex(df_out.index).to_period(aggregation_period),
                                      self.CATEGORY_COL])[self.ABSAMOUNT_COL].sum()
 
-
         for category_name, df_category in df_out_agg.groupby(self.CATEGORY_COL):
-            result = pd.merge(df_all_dates, df_category, on=self.DATETIME_COL, how='left')
+            result = pd.merge(df_all_dates, df_category, on=config.DATE_COL, how='left')
             values_out_category = result.fillna(0)[self.ABSAMOUNT_COL].values
             values_all_categories[category_name] = values_out_category
 
@@ -94,7 +92,6 @@ class TransactionPreprocessor(object):
         ta_tuples = list(map(lambda ta: ta.as_tuple(), self._transactions))
         self._df_all = pd.DataFrame.from_records(data=ta_tuples, columns=self._columns, index=config.DATE_COL)
         self._df_all[self.ABSAMOUNT_COL] = self._df_all.amount.apply(abs)
-        self._df_all[self.DATETIME_COL] = pd.to_datetime(self._df_all.index)
 
         self._df_in = self._df_all[self._df_all.category == config.INCOME_CATEGORY]
 
