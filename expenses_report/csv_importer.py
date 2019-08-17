@@ -28,6 +28,7 @@ class CsvImporter(object):
                 if not column_indices: # first row with column names
                     if len(row) >= len(config.import_mapping.keys()):
                         column_indices = CsvImporter.build_column_mapping(row)
+                        CsvImporter.verify_column_mapping(column_indices, filepath)
                 else:
                     ta = CsvImporter.build_transaction(column_indices, row)
                     if ta.is_valid():
@@ -39,22 +40,43 @@ class CsvImporter(object):
     def build_column_mapping(header_row):
         column_map = dict()
         import_mapping = config.import_mapping
-        for col in import_mapping.keys():
-            for header in import_mapping[col]:
-                if header in header_row:
-                    column_map[col] = header_row.index(header)
-                    break
+        for column_name in import_mapping.keys():
+            if import_mapping[column_name]:
+                for header in import_mapping[column_name]:
+                    if header in header_row:
+                        column_map[column_name] = header_row.index(header)
+                        break
         return column_map
+
+    @staticmethod
+    def verify_column_mapping(column_map, csv_file):
+        missing_column = None
+        if config.DATE_COL not in column_map:
+            missing_column = config.DATE_COL
+        elif config.AMOUNT_COL not in column_map:
+            missing_column = config.AMOUNT_COL
+        elif config.PAYMENT_REASON_COL not in column_map and config.RECIPIENT_COL not in column_map:
+            missing_column = f'{config.PAYMENT_REASON_COL} or {config.RECIPIENT_COL}'
+
+        if missing_column:
+            raise Exception(f'Mandatory column {missing_column} could not be mapped for file {csv_file}')
 
     @staticmethod
     def build_transaction(column_indices, row):
         ta = Transaction()
-        account_raw = row[column_indices[config.ACCOUNT_NO_COL]].strip()
-        ta.account_no = account_raw.rjust(10, '0') # fill up with 0s to length of IBAN
+
+        if config.ACCOUNT_NO_COL in column_indices:
+            ta.set_account_no(row[column_indices[config.ACCOUNT_NO_COL]].strip())
+
         ta.date = util.parse_date(row[column_indices[config.DATE_COL]])
         ta.amount = float(row[column_indices[config.AMOUNT_COL]].replace('.', '').replace(',', '.'))
-        ta.payment_reason = re.sub(r'  +', ' ', row[column_indices[config.PAYMENT_REASON_COL]].strip())
-        ta.recipient = re.sub(r'  +', ' ', row[column_indices[config.RECIPIENT_COL]].strip())
+
+        if config.PAYMENT_REASON_COL in column_indices:
+            ta.payment_reason = re.sub(r'  +', ' ', row[column_indices[config.PAYMENT_REASON_COL]].strip())
+
+        if config.RECIPIENT_COL in column_indices:
+            ta.recipient = re.sub(r'  +', ' ', row[column_indices[config.RECIPIENT_COL]].strip())
+
         return ta
 
     @staticmethod

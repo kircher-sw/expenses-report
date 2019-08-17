@@ -25,11 +25,11 @@ RECIPIENT_COL = 'recipient'
 # with different column header names you could add multiple entries per row.
 # Usually the column names can be found in the first row of the CSV file.
 import_mapping = {
-    ACCOUNT_NO_COL: ['Account No', 'Auftragskonto', 'Kontonummer'],
-    DATE_COL: ['Date', 'Valutadatum', 'Buchungstag', 'Valuta'],
-    AMOUNT_COL: ['Amount', 'Betrag', 'Betrag (EUR)'],
-    PAYMENT_REASON_COL: ['Payment Reason', 'Verwendungszweck'],
-    RECIPIENT_COL: ['Recipient', 'Beguenstigter/Zahlungspflichtiger', 'Auftraggeber / Begünstigter', 'Name']
+    ACCOUNT_NO_COL: ['Account No', 'Auftragskonto', 'Kontonummer'],  # optional (list may be empty)
+    DATE_COL: ['Date', 'Valutadatum', 'Buchungstag', 'Valuta'],  # mandatory
+    AMOUNT_COL: ['Amount', 'Betrag', 'Betrag (EUR)'],  # mandatory
+    PAYMENT_REASON_COL: ['Payment Reason', 'Verwendungszweck'],  # optional if RECIPIENT_COL is set
+    RECIPIENT_COL: ['Recipient', 'Beguenstigter/Zahlungspflichtiger', 'Auftraggeber / Begünstigter', 'Name'],  # optional if PAYMENT_REASON_COL is set
 }
 
 
