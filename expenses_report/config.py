@@ -32,6 +32,7 @@ import_mapping = {
     RECIPIENT_COL: ['Recipient', 'Beguenstigter/Zahlungspflichtiger', 'Auftraggeber / Begünstigter', 'Name'],  # optional if PAYMENT_REASON_COL is set
 }
 
+INITIAL_ACCOUNT_BALANCE = 0.0
 
 # Category name for income
 INCOME_CATEGORY = 'Income'
@@ -58,4 +59,4 @@ categories = {
 # UI related settings
 CURRENCY_LABEL = 'EUR'
 INCOME_LINE_STYLE = dict(color=('rgb(22, 167, 96)'), width=4)
-GAIN_LINE_STYLE = dict(color=('rgb(245, 185, 25)'), width=4)
+GAIN_LINE_STYLE = dict(color=('rgb(10, 65, 190)'), width=4)

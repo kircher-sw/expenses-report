@@ -71,10 +71,10 @@ class ChartCreator(object):
                     dict(step='all')
                 ])
             ),
-            rangeslider=dict(
-                visible=True,
-                thickness=0.08
-            ),
+            #rangeslider=dict(
+            #    visible=True,
+            #    thickness=0.08
+            #),
             type='date')
         layout['xaxis'] = {**current_xaxis, **new_xaxis}
 
