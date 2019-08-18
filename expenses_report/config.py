@@ -36,6 +36,8 @@ import_mapping = {
 # Category name for income
 INCOME_CATEGORY = 'Income'
 
+GAIN_CATEGORY = 'Gain'
+
 # Label for all uncategorized transactions. This category is assigned if no matching keyword was found.
 MISC_CATEGORY = 'Misc'
 
@@ -44,6 +46,7 @@ MISC_CATEGORY = 'Misc'
 # the transactions. (Don't add keywords for INCOME and MISC category)
 categories = {
     INCOME_CATEGORY: None,
+    GAIN_CATEGORY: None,
     'Dwelling': ['Rent', 'Miete', 'Rundfunk'],
     'Car': ['Fuel', 'Garage', 'Kfz-Steuer', 'KFZ-VERSICHERUNG', 'Tankstelle', 'JET', 'Aral', 'Esso', 'Shell', 'Total'],
     'Insurance': ['Insurance', 'HUK', 'HUK24'],
@@ -55,3 +58,4 @@ categories = {
 # UI related settings
 CURRENCY_LABEL = 'EUR'
 INCOME_LINE_STYLE = dict(color=('rgb(22, 167, 96)'), width=4)
+GAIN_LINE_STYLE = dict(color=('rgb(245, 185, 25)'), width=4)

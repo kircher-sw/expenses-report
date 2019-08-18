@@ -42,6 +42,9 @@ class TransactionPreprocessor(object):
         df_in = df_in.resample(aggregation_period).sum().reindex(range_of_all_dates).fillna(0)
         values_all_categories[config.INCOME_CATEGORY] = df_in[self.ABSAMOUNT_COL].values
 
+        df_gain = df_all.resample(aggregation_period).sum().reindex(range_of_all_dates).fillna(0)
+        values_all_categories[config.GAIN_CATEGORY] = df_gain[config.AMOUNT_COL].values
+
         # expenses
         df_out = self._get_dataframe_of_out_transactions()
         df_out_agg = df_out.groupby([pd.DatetimeIndex(df_out.index).to_period(aggregation_period),

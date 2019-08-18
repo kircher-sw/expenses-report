@@ -17,6 +17,11 @@ class ChartCreator(object):
                              if category_name == config.INCOME_CATEGORY else \
                              go.Scatter(x=x_axes,
                                         y=values_all_categories[category_name],
+                                        name=config.GAIN_CATEGORY,
+                                        line=config.GAIN_LINE_STYLE) \
+                             if category_name == config.GAIN_CATEGORY else \
+                             go.Scatter(x=x_axes,
+                                        y=values_all_categories[category_name],
                                         name=category_name,
                                         mode='lines',
                                         stackgroup='out')
