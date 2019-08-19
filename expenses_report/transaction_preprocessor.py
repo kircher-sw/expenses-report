@@ -42,6 +42,10 @@ class TransactionPreprocessor(object):
         df_in = df_in.resample(aggregation_period).sum().reindex(range_of_all_dates).fillna(0)
         values_all_categories[config.INCOME_CATEGORY] = df_in[self.ABSAMOUNT_COL].values
 
+        # gain
+        df_gain = df_all.resample(aggregation_period).sum().reindex(range_of_all_dates).fillna(0)
+        values_all_categories[config.GAIN_CATEGORY] = df_gain[config.AMOUNT_COL].values
+
         # expenses
         df_out = self._get_dataframe_of_out_transactions()
         df_out_agg = df_out.groupby([pd.DatetimeIndex(df_out.index).to_period(aggregation_period),
@@ -86,10 +90,15 @@ class TransactionPreprocessor(object):
         x_axis = list(map(lambda date: date, df_all.resample('D').sum().index))
         cumulative_categories = dict()
         for category_name in reversed(list(config.categories.keys())):
-            df_category = df_all[df_all.category == category_name]
+            df_category = df_all if category_name == config.GAIN_CATEGORY else df_all[df_all.category == category_name]
             df_category = df_category.resample('D').sum().reindex(df_all.index).resample('D').max().fillna(0)
 
-            values = list(df_category[self.ABSAMOUNT_COL].cumsum())
+            agg_column = self.ABSAMOUNT_COL
+            if category_name == config.GAIN_CATEGORY:
+                df_category.loc[df_category.index.min(), config.AMOUNT_COL] += config.INITIAL_ACCOUNT_BALANCE
+                agg_column = config.AMOUNT_COL
+
+            values = list(df_category[agg_column].cumsum())
             cumulative_categories[category_name] = values
 
         return (x_axis, cumulative_categories)

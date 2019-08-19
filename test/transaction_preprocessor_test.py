@@ -32,8 +32,9 @@ class TestCsvImport(unittest.TestCase):
         x_axis, values_all_categories = processor.aggregate_transactions_by_category('M')
 
         self.assertEqual(3, len(x_axis))
-        self.assertEqual(1, len(values_all_categories.keys()))
+        self.assertEqual(2, len(values_all_categories.keys()))
         self.assertListEqual([70.0, 0.0, 100.0], list(values_all_categories[config.INCOME_CATEGORY]))
+        self.assertListEqual([70.0, 0.0, 100.0], list(values_all_categories[config.GAIN_CATEGORY]))
 
 
     def test_aggregate_different_expenses_by_month(self):
@@ -50,7 +51,7 @@ class TestCsvImport(unittest.TestCase):
         x_axis, values_all_categories = processor.aggregate_transactions_by_category('M')
 
         self.assertEqual(4, len(x_axis))
-        self.assertEqual(3, len(values_all_categories.keys()))
+        self.assertEqual(4, len(values_all_categories.keys()))
         self.assertListEqual([20.0, 30.0, 0.0, 0.0], list(values_all_categories[self.category1]))
         self.assertListEqual([50.0, 0.0, 0.0, 250.0], list(values_all_categories[self.category2]))
 
@@ -69,10 +70,11 @@ class TestCsvImport(unittest.TestCase):
         x_axis, values_all_categories = processor.aggregate_transactions_by_category('Y')
 
         self.assertEqual(2, len(x_axis))
-        self.assertEqual(3, len(values_all_categories.keys())) # includes income category
+        self.assertEqual(4, len(values_all_categories.keys())) # includes income category
         self.assertListEqual([120.0, 0.0], list(values_all_categories[config.INCOME_CATEGORY]))
         self.assertListEqual([80.0, 0.0], list(values_all_categories[self.category1]))
         self.assertListEqual([100.0, 150.0], list(values_all_categories[self.category2]))
+        self.assertListEqual([-60.0, -150.0], list(values_all_categories[config.GAIN_CATEGORY]))
 
 
     def test_aggregate_expenses_by_year_with_total(self):
