@@ -59,4 +59,4 @@ categories = {
 # UI related settings
 CURRENCY_LABEL = 'EUR'
 INCOME_LINE_STYLE = dict(color=('rgb(22, 167, 96)'), width=4)
-GAIN_LINE_STYLE = dict(color=('rgb(10, 65, 190)'), width=4)
+GAIN_LINE_STYLE = dict(color=('rgb(10, 65, 190)'), width=3)
