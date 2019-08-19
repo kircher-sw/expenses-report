@@ -111,3 +111,24 @@ class ChartCreator(object):
         fig.layout.update(sliders=[slider])
 
         return plotly.offline.plot(fig, output_type='div', include_plotlyjs=False)
+
+    @staticmethod
+    def create_bubble_chart(result):
+        traces = list()
+        for category_name in result.keys():
+            x_values, y_values, ratios, labels = result[category_name]
+            size = [max(15, ratio * 10000) for ratio in ratios]
+            traces.append(go.Scatter(x=x_values,
+                                     y=y_values,
+                                     name=category_name,
+                                     hovertext=labels,
+                                     mode='markers',
+                                     marker=dict(size=size,
+                                                 sizemode='area',
+                                                 line=dict(width=2))))
+
+        layout = dict(yaxis=dict(title=config.CURRENCY_LABEL, type='log'))
+        ChartCreator._add_range_selectors(layout)
+
+        fig = go.Figure(data=traces, layout=layout)
+        return plotly.offline.plot(fig, output_type='div', include_plotlyjs=False)
