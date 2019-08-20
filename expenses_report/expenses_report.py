@@ -31,6 +31,10 @@ class ExpensesReport(object):
         x_axis, cumulative_categories = self._ta_preprocessor.accumulate_categories()
         self._charts.append(ChartCreator.create_stacked_area_plot(x_axis, cumulative_categories))
 
+    def create_transaction_bubble_chart(self):
+        result = self._ta_preprocessor.preprocess_by_category()
+        self._charts.append(ChartCreator.create_bubble_chart(result))
+
 
 _expenses_report = ExpensesReport()
 
@@ -65,6 +69,7 @@ def calculate_charts():
     _expenses_report.create_stacked_area_chart_with_year_frequency()
     _expenses_report.create_pie_chart_with_categories_by_year()
     _expenses_report.create_stacked_area_with_cumulative_categories()
+    _expenses_report.create_transaction_bubble_chart()
 
 
 def write_report():

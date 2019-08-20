@@ -2,10 +2,12 @@ import pandas as pd
 
 from expenses_report import config
 
+pd.options.mode.chained_assignment = None  # default='warn'
 
 class TransactionPreprocessor(object):
     CATEGORY_COL = 'category'
     ABSAMOUNT_COL = 'absamount'
+    LABEL = 'label'
     _transactions = list()
     _columns = None
     _df_all = None
@@ -103,12 +105,32 @@ class TransactionPreprocessor(object):
 
         return (x_axis, cumulative_categories)
 
+    def preprocess_by_category(self):
+        """
+        Preprocesses each transaction and calculates the relative amount within its category
+        :return:
+        """
+        RATIO = 'ratio'
+        result = dict()
+        df_out = self._get_dataframe_of_out_transactions()
+        for category_name in config.categories.keys():
+            df_category = df_out[df_out.category == category_name]
+            category_total = df_category[self.ABSAMOUNT_COL].sum()
+            df_category.loc[:, RATIO] = df_category[self.ABSAMOUNT_COL] / category_total
+            x_axis = list(map(lambda datetime: pd.Timestamp(datetime), pd.DatetimeIndex(df_category.index).values))
+            if x_axis:
+                result[category_name] = (x_axis,
+                                         df_category[self.ABSAMOUNT_COL].values,
+                                         df_category[RATIO].values,
+                                         df_category[self.LABEL].values)
+        return result
 
     def _rebuild_dataframes(self):
         # create DataFrame from imported transactions
         ta_tuples = list(map(lambda ta: ta.as_tuple(), self._transactions))
         self._df_all = pd.DataFrame.from_records(data=ta_tuples, columns=self._columns, index=config.DATE_COL)
         self._df_all[self.ABSAMOUNT_COL] = self._df_all.amount.apply(abs)
+        self._df_all[self.LABEL] = self._df_all[config.PAYMENT_REASON_COL] + '<br>' + self._df_all[config.RECIPIENT_COL]
 
         self._df_in = self._df_all[self._df_all.category == config.INCOME_CATEGORY]
 

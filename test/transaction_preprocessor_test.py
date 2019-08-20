@@ -121,6 +121,31 @@ class TestCsvImport(unittest.TestCase):
         self.assertListEqual([50.0, 80.0, 80.0, 80.0, 80.0], list(cumulative_categories[self.category1]))
         self.assertListEqual([0.0, 0.0, 100.0, 100.0, 200.0], list(cumulative_categories[self.category2]))
 
+    def test_preprocess_expenses_by_category(self):
+        processor = TransactionPreprocessor()
+        transactions = [
+            Transaction('123456', datetime(year=2019, month=3, day=5), 120.0, 'reason', 'recipient', config.INCOME_CATEGORY),
+            Transaction('123456', datetime(year=2019, month=3, day=5), -50.0, 'reason', 'recipient', self.category1),
+            Transaction('123456', datetime(year=2019, month=3, day=6), -30.0, 'reason', 'recipient', self.category1),
+            Transaction('123456', datetime(year=2019, month=3, day=7), -100.0, 'reason', 'recipient', self.category2),
+            Transaction('123456', datetime(year=2019, month=3, day=8), 200.0, 'reason', 'recipient', config.INCOME_CATEGORY),
+            Transaction('123456', datetime(year=2019, month=3, day=9), -100.0, 'reason', 'recipient', self.category2),
+        ]
+        processor.set_transactions(transactions)
+
+        result = processor.preprocess_by_category()
+        self.assertEqual(2, len(result.keys()))
+
+        xaxis1, values1, ratios1, labels1 = result[self.category1]
+        self.assertEqual(2, len(xaxis1))
+        self.assertListEqual([50.0, 30.0], list(values1))
+        self.assertListEqual([50.0 / 80.0, 30.0 / 80.0], list(ratios1))
+
+        xaxis2, values2, ratios2, labels2 = result[self.category2]
+        self.assertEqual(2, len(xaxis2))
+        self.assertListEqual([100.0, 100.0], list(values2))
+        self.assertListEqual([100.0 / 200.0, 100.0 / 200.0], list(ratios2))
+
 
 if __name__ == '__main__':
     unittest.main()
