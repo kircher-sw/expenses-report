@@ -34,6 +34,9 @@ For an interactive report demonstration see [sample/sample-report.html](https://
 ### All transactions cumulated by categories
 ![Categories cumulated](sample/category-cumulated.png "expenses-report cumulated by categories")
 
+### All expenses
+![All expenses](sample/all-expenses.png "expenses-report")
+
 ## Usage
 1. Clone repository
 1. Adapt the file [**expenses_report/config.py**](expenses_report/config.py)
