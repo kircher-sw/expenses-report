@@ -2,6 +2,7 @@ import pandas as pd
 
 from expenses_report import config
 
+pd.options.mode.chained_assignment = None  # default='warn'
 
 class TransactionPreprocessor(object):
     CATEGORY_COL = 'category'
@@ -105,14 +106,17 @@ class TransactionPreprocessor(object):
         return (x_axis, cumulative_categories)
 
     def preprocess_by_category(self):
+        """
+        Preprocesses each transaction and calculates the relative amount within its category
+        :return:
+        """
         RATIO = 'ratio'
         result = dict()
         df_out = self._get_dataframe_of_out_transactions()
         for category_name in config.categories.keys():
             df_category = df_out[df_out.category == category_name]
             category_total = df_category[self.ABSAMOUNT_COL].sum()
-            #df_category[RATIO] = df_category[self.ABSAMOUNT_COL] / category_total
-            df_category.loc[:, RATIO] = df_category[self.ABSAMOUNT_COL].apply(lambda x: x / category_total)
+            df_category.loc[:, RATIO] = df_category[self.ABSAMOUNT_COL] / category_total
             x_axis = list(map(lambda datetime: pd.Timestamp(datetime), pd.DatetimeIndex(df_category.index).values))
             if x_axis:
                 result[category_name] = (x_axis,
