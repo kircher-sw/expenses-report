@@ -35,7 +35,7 @@ For an interactive report demonstration see [sample/sample-report.html](https://
 ![Categories cumulated](sample/category-cumulated.png "expenses-report cumulated by categories")
 
 ### All expenses
-![All expenses](sample/all-expenses.png "expenses-report")
+![All expenses](sample/all_expenses.png "expenses-report")
 
 ## Usage
 1. Clone repository
