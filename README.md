@@ -15,9 +15,9 @@ Keeps track of your personal expenses.
 ---
 
 ## Requirements
-* [Python](https://www.python.org/downloads) >= 3.6
-* [Pandas](https://pandas.pydata.org/pandas-docs/stable/install.html#installing-from-pypi) >= 0.24.2
-* [Plotly](https://plot.ly/python/getting-started/#installation) >= 3.8.1
+* <a href="https://www.python.org/downloads" target="_blank">Python</a> >= 3.6
+* <a href="https://pandas.pydata.org/pandas-docs/stable/install.html#installing-from-pypi" target="_blank">Pandas</a> >= 0.24.2
+* <a href="https://plot.ly/python/getting-started/#installation" target="_blank">Plotly</a> >= 3.8.1
 
 ## Example
 For an interactive report demonstration see [sample/sample-report.html](https://kircher-sw.github.io/expenses-report/sample/sample-report.html)
