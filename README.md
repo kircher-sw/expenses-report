@@ -15,23 +15,21 @@ Keeps track of your personal expenses.
 ---
 
 ## Requirements
-* Python >= 3.6
-* Pandas >= 0.24.2
-* Plotly >= 3.8.1
+* [Python](https://www.python.org/downloads) >= 3.6
+* [Pandas](https://pandas.pydata.org/pandas-docs/stable/install.html#installing-from-pypi) >= 0.24.2
+* [Plotly](https://plot.ly/python/getting-started/#installation) >= 3.8.1
 
 ## Example
 For an interactive report demonstration see [sample/sample-report.html](https://kircher-sw.github.io/expenses-report/sample/sample-report.html)
 
-### Categories grouped by month
+### Monthly expenses
 ![Categories by month](sample/category-month.png "expenses-report Categories by month")
 
-### Categories grouped by year
+### Annual expenses
 ![Categories by year](sample/category-year.png "expenses-report Categories by year")
-
-### Categories as a pie-chart
 ![Pie chart](sample/pie-year.png "expenses-report Categories as a pie chart")
 
-### All transactions cumulated by categories
+### Accumulated expenses
 ![Categories cumulated](sample/category-cumulated.png "expenses-report cumulated by categories")
 
 ### All expenses
