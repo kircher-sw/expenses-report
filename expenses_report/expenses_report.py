@@ -1,5 +1,6 @@
 
 from expenses_report import config
+from expenses_report.argument_parser import ArgumentParser
 from expenses_report.csv_importer import CsvImporter
 from expenses_report.category_finder import CategoryFinder
 from expenses_report.transaction_preprocessor import TransactionPreprocessor
@@ -38,6 +39,9 @@ class ExpensesReport(object):
 
 _expenses_report = ExpensesReport()
 
+def configure_script():
+    parser = ArgumentParser()
+    parser.configure_script()
 
 def import_csv_files():
     importer = CsvImporter()
