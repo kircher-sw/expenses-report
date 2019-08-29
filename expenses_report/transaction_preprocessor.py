@@ -112,9 +112,9 @@ class TransactionPreprocessor(object):
         """
         RATIO = 'ratio'
         result = dict()
-        df_out = self._get_dataframe_of_out_transactions()
+        df = self._get_dataframe_of_all_transactions()
         for category_name in config.categories.keys():
-            df_category = df_out[df_out.category == category_name]
+            df_category = df[df.category == category_name]
             category_total = df_category[self.ABSAMOUNT_COL].sum()
             df_category.loc[:, RATIO] = df_category[self.ABSAMOUNT_COL] / category_total
             x_axis = list(map(lambda datetime: pd.Timestamp(datetime), pd.DatetimeIndex(df_category.index).values))
