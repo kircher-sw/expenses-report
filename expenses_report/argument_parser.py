@@ -55,26 +55,31 @@ class ArgumentParser(object):
             config.import_mapping[config.RECIPIENT_COL] = [args.csv_recipient_col]
             print(f'set CSV recipient column to "{args.csv_recipient_col}"')
 
+        new_categories = None
         if args.income_category:
+            del config.categories[config.INCOME_CATEGORY]
             config.INCOME_CATEGORY = args.income_category
+            new_categories = config.categories.copy()
             print(f'set income category to "{config.INCOME_CATEGORY}"')
         if args.gain_category:
+            del config.categories[config.GAIN_CATEGORY]
             config.GAIN_CATEGORY = args.gain_category
+            new_categories = config.categories.copy()
             print(f'set gain category to "{config.GAIN_CATEGORY}"')
         if args.misc_category:
+            del config.categories[config.MISC_CATEGORY]
             config.MISC_CATEGORY = args.misc_category
+            new_categories = config.categories.copy()
             print(f'set misc category to "{config.MISC_CATEGORY}"')
         if args.category:
-            categories = self._parse_categories(args.category)
-            self._rebuild_category_config(categories)
+            new_categories = self._parse_categories(args.category)
             print(f'set categories to "{config.categories}"')
 
+        if new_categories:
+            self._rebuild_categories_config(new_categories)
 
     def _parse_categories(self, categories):
         new_categories = dict()
-        if not isinstance(categories, list):
-            categories = [categories]
-
         for category in categories:
             category_name, keywords = self._parse_category(category)
             if category_name:
@@ -95,9 +100,9 @@ class ArgumentParser(object):
         return category_name, keywords
 
 
-    def _rebuild_category_config(self, categories):
+    def _rebuild_categories_config(self, new_categories):
         config.categories.clear()
         config.categories[config.INCOME_CATEGORY] = None
         config.categories[config.GAIN_CATEGORY] = None
-        config.categories = {**config.categories, **categories}
+        config.categories = {**config.categories, **new_categories}
         config.categories[config.MISC_CATEGORY] = None

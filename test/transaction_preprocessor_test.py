@@ -134,7 +134,12 @@ class TestCsvImport(unittest.TestCase):
         processor.set_transactions(transactions)
 
         result = processor.preprocess_by_category()
-        self.assertEqual(2, len(result.keys()))
+        self.assertEqual(3, len(result.keys()))
+
+        xaxis_in, values_in, ratios_in, labels_in = result[config.INCOME_CATEGORY]
+        self.assertEqual(2, len(xaxis_in))
+        self.assertListEqual([120.0, 200.0], list(values_in))
+        self.assertListEqual([120.0 / 320.0, 200.0 / 320.0], list(ratios_in))
 
         xaxis1, values1, ratios1, labels1 = result[self.category1]
         self.assertEqual(2, len(xaxis1))

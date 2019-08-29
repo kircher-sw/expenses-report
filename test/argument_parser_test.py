@@ -19,6 +19,7 @@ class TestArgumentParster(unittest.TestCase):
         parser = ArgumentParser()
         parser.configure_script(self._build_args('--misc_category other'))
         self.assertEqual('other', config.MISC_CATEGORY)
+        self.assertTrue('other' in config.categories)
 
     def test_define_single_category(self):
         parser = ArgumentParser()
