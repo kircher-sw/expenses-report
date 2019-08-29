@@ -39,18 +39,18 @@ For an interactive report demonstration see [sample/sample-report.html](https://
 1. Clone repository
 1. Adapt the file [**expenses_report/config.py**](expenses_report/config.py)
     * define the path to the folder which contains your CSV files (either absolute or relative to the project directory)
-      ``` python
+      ```python
       CSV_FILES_PATH = 'sample'
       ```
     * specify column names of the CSV files in the `import-mapping` dictionary
-      ``` python
+      ```python
       import_mapping = {
-        ACCOUNT_NO_COL: ['Account No'],
+        DATE_COL: ['Date', 'Valuta'],
         ...
       }
       ```
     * define `categories` of interest and add keywords as they occur in your transactions
-      ``` python
+      ```python
       categories = {
         ...
         'Car': ['Fuel', 'Garage', ...],
