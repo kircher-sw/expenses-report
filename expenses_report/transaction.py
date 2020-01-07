@@ -8,14 +8,16 @@ class Transaction(object):
     payment_reason = ''
     recipient = ''
     category = ''
+    other_account_no = ''
 
-    def __init__(self, account_no='', date=None, amount=0.0, payment_reason='', recipient='', category=''):
+    def __init__(self, account_no='', date=None, amount=0.0, payment_reason='', recipient='', category='', other_account_no=''):
         self.date = date
         self.amount = amount
         self.payment_reason = payment_reason
         self.recipient = recipient
         self.category = category
         self.set_account_no(account_no)
+        self.other_account_no = other_account_no
 
     def is_valid(self):
         return self.date is not None and self.amount is not None
@@ -30,7 +32,7 @@ class Transaction(object):
         return self.account_no[-10:]
 
     def as_tuple(self):
-        return (self.get_short_account_no(), self.date, self.amount, self.payment_reason, self.recipient, self.category)
+        return (self.get_short_account_no(), self.date, self.amount, self.payment_reason, self.recipient, self.other_account_no, self.category)
 
     def __repr__(self):
         return f'{self.account_no} | {self.date} | {self.amount} | {self.payment_reason} | {self.recipient} | <{self.category}>'
@@ -43,7 +45,8 @@ class Transaction(object):
                    self.amount == other.amount and \
                    self.payment_reason == other.payment_reason and \
                    self.recipient == other.recipient and \
-                   self.category == other.category
+                   self.category == other.category and \
+                   self.other_account_no == other.other_account_no
         return False
 
     def __hash__(self):

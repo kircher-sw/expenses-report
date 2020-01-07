@@ -46,8 +46,13 @@ def configure_script():
 def import_csv_files():
     importer = CsvImporter()
     transactions = importer.import_from_csv_files()
+    transactions = remove_internal_transactions(transactions)
     _expenses_report._transactions = transactions
 
+def remove_internal_transactions(transactions):
+    own_account_numbers = set(list(map(lambda ta: ta.account_no, transactions)))
+    clean_transactions = list(filter(lambda ta: ta.other_account_no not in own_account_numbers, transactions))
+    return clean_transactions
 
 def assign_category_to_transactions():
     transactions = _expenses_report._transactions

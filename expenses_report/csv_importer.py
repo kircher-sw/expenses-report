@@ -77,6 +77,9 @@ class CsvImporter(object):
         if config.RECIPIENT_COL in column_indices:
             ta.recipient = re.sub(r'  +', ' ', row[column_indices[config.RECIPIENT_COL]].strip())
 
+        if config.OTHER_ACCOUNT_NO_COL in column_indices:
+            ta.other_account_no = row[column_indices[config.OTHER_ACCOUNT_NO_COL]].strip()
+
         return ta
 
     @staticmethod
