@@ -7,15 +7,18 @@ class Transaction(object):
     amount = 0.0
     payment_reason = ''
     recipient = ''
-    category = ''
+    main_category = ''
+    sub_category = ''
     other_account_no = ''
 
-    def __init__(self, account_no='', date=None, amount=0.0, payment_reason='', recipient='', category='', other_account_no=''):
+    def __init__(self, account_no='', date=None, amount=0.0, payment_reason='', recipient='', main_category='',
+                 sub_category = '', other_account_no=''):
         self.date = date
         self.amount = amount
         self.payment_reason = payment_reason
         self.recipient = recipient
-        self.category = category
+        self.main_category = main_category
+        self.sub_category = sub_category
         self.set_account_no(account_no)
         self.other_account_no = other_account_no
 
@@ -32,10 +35,12 @@ class Transaction(object):
         return self.account_no[-10:]
 
     def as_tuple(self):
-        return (self.get_short_account_no(), self.date, self.amount, self.payment_reason, self.recipient, self.other_account_no, self.category)
+        return (self.get_short_account_no(), self.date, self.amount, self.payment_reason, self.recipient,
+                self.other_account_no, self.main_category, self.sub_category)
 
     def __repr__(self):
-        return f'{self.account_no} | {self.date} | {self.amount} | {self.payment_reason} | {self.recipient} | <{self.category}>'
+        return f'{self.account_no} | {self.date} | {self.amount} | {self.payment_reason} | {self.recipient} | ' \
+               f'<{self.main_category}/{self.sub_category}>'
 
     def __eq__(self, other):
         if isinstance(other, Transaction):
@@ -45,7 +50,8 @@ class Transaction(object):
                    self.amount == other.amount and \
                    self.payment_reason == other.payment_reason and \
                    self.recipient == other.recipient and \
-                   self.category == other.category and \
+                   self.main_category == other.main_category and \
+                   self.sub_category == other.sub_category and \
                    self.other_account_no == other.other_account_no
         return False
 

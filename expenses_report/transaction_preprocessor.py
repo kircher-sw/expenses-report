@@ -5,7 +5,8 @@ from expenses_report import config
 pd.options.mode.chained_assignment = None  # default='warn'
 
 class TransactionPreprocessor(object):
-    CATEGORY_COL = 'category'
+    CATEGORY_MAIN_COL = 'main_category'
+    CATEGORY_SUB_COL = 'sub_category'
     ABSAMOUNT_COL = 'absamount'
     LABEL = 'label'
     _transactions = list()
@@ -15,7 +16,7 @@ class TransactionPreprocessor(object):
     _df_out = None
 
     def __init__(self):
-        self._columns = list(config.import_mapping.keys()) + [self.CATEGORY_COL]
+        self._columns = list(config.import_mapping.keys()) + [self.CATEGORY_MAIN_COL, self.CATEGORY_SUB_COL]
 
     def set_transactions(self, transactions):
         self._transactions = transactions
@@ -51,9 +52,9 @@ class TransactionPreprocessor(object):
         # expenses
         df_out = self._get_dataframe_of_out_transactions()
         df_out_agg = df_out.groupby([pd.DatetimeIndex(df_out.index).to_period(aggregation_period),
-                                     self.CATEGORY_COL])[self.ABSAMOUNT_COL].sum()
+                                     self.CATEGORY_MAIN_COL])[self.ABSAMOUNT_COL].sum()
 
-        for category_name, df_category in df_out_agg.groupby(self.CATEGORY_COL):
+        for category_name, df_category in df_out_agg.groupby(self.CATEGORY_MAIN_COL):
             result = pd.merge(df_all_dates, df_category, on=config.DATE_COL, how='left')
             values_out_category = result.fillna(0)[self.ABSAMOUNT_COL].values
             values_all_categories[category_name] = values_out_category
@@ -68,7 +69,7 @@ class TransactionPreprocessor(object):
         """
         result = dict()
         df_out = self._get_dataframe_of_out_transactions()
-        df_out_agg_years = df_out.groupby([df_out.index.year, self.CATEGORY_COL])[self.ABSAMOUNT_COL].sum()
+        df_out_agg_years = df_out.groupby([df_out.index.year, self.CATEGORY_MAIN_COL])[self.ABSAMOUNT_COL].sum()
 
         years = list(df_out_agg_years.index.levels[0].values)
         for year in years:
@@ -92,7 +93,7 @@ class TransactionPreprocessor(object):
         x_axis = list(map(lambda date: date, df_all.resample('D').sum().index))
         cumulative_categories = dict()
         for category_name in reversed(list(config.categories.keys())):
-            df_category = df_all if category_name == config.GAIN_CATEGORY else df_all[df_all.category == category_name]
+            df_category = df_all if category_name == config.GAIN_CATEGORY else df_all[df_all.main_category == category_name]
             df_category = df_category.resample('D').sum().reindex(df_all.index).resample('D').max().fillna(0)
 
             agg_column = self.ABSAMOUNT_COL
@@ -114,7 +115,7 @@ class TransactionPreprocessor(object):
         result = dict()
         df = self._get_dataframe_of_all_transactions()
         for category_name in config.categories.keys():
-            df_category = df[df.category == category_name]
+            df_category = df[df.main_category == category_name]
             category_total = df_category[self.ABSAMOUNT_COL].sum()
             df_category.loc[:, RATIO] = df_category[self.ABSAMOUNT_COL] / category_total
             x_axis = list(map(lambda datetime: pd.Timestamp(datetime), pd.DatetimeIndex(df_category.index).values))
@@ -132,9 +133,9 @@ class TransactionPreprocessor(object):
         self._df_all[self.ABSAMOUNT_COL] = self._df_all.amount.apply(abs)
         self._df_all[self.LABEL] = self._df_all[config.PAYMENT_REASON_COL] + '<br>' + self._df_all[config.RECIPIENT_COL]
 
-        self._df_in = self._df_all[self._df_all.category == config.INCOME_CATEGORY]
+        self._df_in = self._df_all[self._df_all.main_category == config.INCOME_CATEGORY]
 
-        self._df_out = self._df_all[self._df_all.category != config.INCOME_CATEGORY]
+        self._df_out = self._df_all[self._df_all.main_category != config.INCOME_CATEGORY]
 
     def _get_dataframe_of_all_transactions(self):
         if self._df_all is None:

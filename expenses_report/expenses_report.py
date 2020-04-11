@@ -7,6 +7,10 @@ from expenses_report.transaction_preprocessor import TransactionPreprocessor
 from expenses_report.chart_creator import ChartCreator
 from expenses_report.html_report import HtmlReport
 
+import pandas as pd
+import plotly
+import plotly.express as px
+
 
 class ExpensesReport(object):
     _transactions = list()
@@ -25,8 +29,20 @@ class ExpensesReport(object):
         self._charts.append(ChartCreator.create_stacked_area_plot(x_axis, values_all_categories))
 
     def create_pie_chart_with_categories_by_year(self):
-        results = self._ta_preprocessor.aggregate_expenses_by_year()
-        self._charts.append(ChartCreator.create_pie_plot(results))
+        #results = self._ta_preprocessor.aggregate_expenses_by_year()
+        #self._charts.append(ChartCreator.create_pie_plot(results))
+
+        df_out = self._ta_preprocessor._get_dataframe_of_out_transactions()
+        df_out_agg_years = df_out.groupby([df_out.index.year, self._ta_preprocessor.CATEGORY_MAIN_COL,
+                                           self._ta_preprocessor.CATEGORY_SUB_COL])[self._ta_preprocessor.ABSAMOUNT_COL].sum()
+        df = df_out_agg_years[df_out_agg_years.index.get_level_values(0) == 2019].reset_index()
+        df.loc[df.sub_category == '', self._ta_preprocessor.CATEGORY_SUB_COL] = None
+        fig = px.sunburst(df,
+                          path=[self._ta_preprocessor.CATEGORY_MAIN_COL, self._ta_preprocessor.CATEGORY_SUB_COL],
+                          values=self._ta_preprocessor.ABSAMOUNT_COL)
+        sunburst_chart = plotly.offline.plot(fig, output_type='div', include_plotlyjs=False)
+        self._charts.append(sunburst_chart)
+
 
     def create_stacked_area_with_cumulative_categories(self):
         x_axis, cumulative_categories = self._ta_preprocessor.accumulate_categories()
@@ -49,6 +65,8 @@ def import_csv_files():
     transactions = remove_internal_transactions(transactions)
     _expenses_report._transactions = transactions
 
+
+
 def remove_internal_transactions(transactions):
     own_account_numbers = set(list(map(lambda ta: ta.account_no, transactions)))
     clean_transactions = list(filter(lambda ta: ta.other_account_no not in own_account_numbers, transactions))
@@ -66,7 +84,7 @@ def print_transactions_statistics(transactions):
     print('-----------------')
     print(f'Total transactions {len(transactions)}')
     print('-----------------')
-    uncategorized_transactions = list(filter(lambda ta: ta.category == config.MISC_CATEGORY, transactions))
+    uncategorized_transactions = list(filter(lambda ta: ta.main_category == config.MISC_CATEGORY, transactions))
     print(f'Uncategorized transactions {len(uncategorized_transactions)}')
     for ta in uncategorized_transactions:
         print(ta)
