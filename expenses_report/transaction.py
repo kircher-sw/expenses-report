@@ -31,11 +31,11 @@ class Transaction(object):
     def set_account_no(self, account_raw):
         self.account_no = account_raw.rjust(22, '0')  # fill up with 0s to length of IBAN
 
-    def get_short_account_no(self):
-        return self.account_no[-10:]
+    def set_other_account_no(self, other_account_raw):
+        self.other_account_no = other_account_raw.rjust(22, '0')  # fill up with 0s to length of IBAN
 
     def as_tuple(self):
-        return (self.get_short_account_no(), self.date, self.amount, self.payment_reason, self.recipient,
+        return (self.account_no, self.date, self.amount, self.payment_reason, self.recipient,
                 self.other_account_no, self.main_category, self.sub_category)
 
     def __repr__(self):
@@ -44,7 +44,7 @@ class Transaction(object):
 
     def __eq__(self, other):
         if isinstance(other, Transaction):
-            return self.get_short_account_no() == other.get_short_account_no() and \
+            return self.account_no == other.account_no and \
                    self.date == other.date and \
                    math.isclose(self.amount, other.amount, rel_tol=1e-09, abs_tol=0.0) and \
                    self.amount == other.amount and \

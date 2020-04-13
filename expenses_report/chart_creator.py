@@ -1,7 +1,7 @@
 import plotly
 import plotly.graph_objs as go
 
-from expenses_report import config
+from expenses_report.config import config
 
 
 class ChartCreator(object):

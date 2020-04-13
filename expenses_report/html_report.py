@@ -1,7 +1,7 @@
 import os
 import re
 
-from expenses_report import config
+from expenses_report.config import config
 
 class HtmlReport(object):
 

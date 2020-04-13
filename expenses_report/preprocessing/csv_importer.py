@@ -2,7 +2,7 @@ import csv
 import os
 import re
 
-from expenses_report import config
+from expenses_report.config import config
 from expenses_report import util
 from expenses_report.transaction import Transaction
 
@@ -78,7 +78,7 @@ class CsvImporter(object):
             ta.recipient = re.sub(r'  +', ' ', row[column_indices[config.RECIPIENT_COL]].strip())
 
         if config.OTHER_ACCOUNT_NO_COL in column_indices:
-            ta.other_account_no = row[column_indices[config.OTHER_ACCOUNT_NO_COL]].strip()
+            ta.set_other_account_no(row[column_indices[config.OTHER_ACCOUNT_NO_COL]].strip())
 
         return ta
 

@@ -1,8 +1,8 @@
 
-from expenses_report import config
+from expenses_report.config import config
 from expenses_report.argument_parser import ArgumentParser
-from expenses_report.csv_importer import CsvImporter
-from expenses_report.category_finder import CategoryFinder
+from expenses_report.preprocessing.csv_importer import CsvImporter
+from expenses_report.preprocessing.category_finder import CategoryFinder
 from expenses_report.transaction_preprocessor import TransactionPreprocessor
 from expenses_report.chart_creator import ChartCreator
 from expenses_report.html_report import HtmlReport
@@ -21,25 +21,25 @@ class ExpensesReport(object):
         self._ta_preprocessor.set_transactions(self._transactions)
 
     def create_stacked_area_chart_with_month_frequency(self):
-        x_axis, values_all_categories = self._ta_preprocessor.aggregate_transactions_by_category(aggregation_period='M')
+        x_axis, values_all_categories = self._ta_preprocessor.aggregate_transactions_by_category(aggregation_period='MS')
         self._charts.append(ChartCreator.create_stacked_area_plot(x_axis, values_all_categories, show_range_selectors=True))
 
     def create_stacked_area_chart_with_year_frequency(self):
-        x_axis, values_all_categories = self._ta_preprocessor.aggregate_transactions_by_category(aggregation_period='Y')
+        x_axis, values_all_categories = self._ta_preprocessor.aggregate_transactions_by_category(aggregation_period='YS')
         self._charts.append(ChartCreator.create_stacked_area_plot(x_axis, values_all_categories))
 
     def create_pie_chart_with_categories_by_year(self):
         #results = self._ta_preprocessor.aggregate_expenses_by_year()
         #self._charts.append(ChartCreator.create_pie_plot(results))
 
-        df_out = self._ta_preprocessor._get_dataframe_of_out_transactions()
-        df_out_agg_years = df_out.groupby([df_out.index.year, self._ta_preprocessor.CATEGORY_MAIN_COL,
-                                           self._ta_preprocessor.CATEGORY_SUB_COL])[self._ta_preprocessor.ABSAMOUNT_COL].sum()
-        df = df_out_agg_years[df_out_agg_years.index.get_level_values(0) == 2019].reset_index()
-        df.loc[df.sub_category == '', self._ta_preprocessor.CATEGORY_SUB_COL] = None
+        df_out = self._ta_preprocessor._formatter.get_out_transactions()
+        df_out_agg_years = df_out.groupby([df_out.index.year, config.CATEGORY_MAIN_COL,
+                                           config.CATEGORY_SUB_COL])[config.ABSAMOUNT_COL].sum()
+        df = df_out_agg_years[df_out_agg_years.index.get_level_values(0) == 2020].reset_index()
+        df.loc[df.sub_category == '', config.CATEGORY_SUB_COL] = None # do not plot missing values
         fig = px.sunburst(df,
-                          path=[self._ta_preprocessor.CATEGORY_MAIN_COL, self._ta_preprocessor.CATEGORY_SUB_COL],
-                          values=self._ta_preprocessor.ABSAMOUNT_COL)
+                          path=[config.CATEGORY_MAIN_COL, config.CATEGORY_SUB_COL],
+                          values=config.ABSAMOUNT_COL)
         sunburst_chart = plotly.offline.plot(fig, output_type='div', include_plotlyjs=False)
         self._charts.append(sunburst_chart)
 
@@ -89,6 +89,12 @@ def print_transactions_statistics(transactions):
     for ta in uncategorized_transactions:
         print(ta)
     print('-----------------')
+
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.width', 2000)
+    df_all = _expenses_report._ta_preprocessor._formatter.get_all_transactions()
+    print(df_all.sort_values(by=[config.CATEGORY_MAIN_COL, config.CATEGORY_SUB_COL]))
 
 
 def calculate_charts():

@@ -1,5 +1,5 @@
 
-from expenses_report import config
+from expenses_report.config import config
 from expenses_report.transaction import Transaction
 
 
