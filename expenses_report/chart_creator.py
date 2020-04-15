@@ -1,5 +1,7 @@
 import plotly
 import plotly.graph_objs as go
+import plotly.graph_objects as gos
+import pandas as pd
 
 from expenses_report.config import config
 
@@ -84,8 +86,7 @@ class ChartCreator(object):
         fig = go.Figure()
         for year in results.keys():
             total, labels, values = results[year]
-            pie_trace = go.Pie(visible=year == max(results.keys()),
-                               name=str(year),
+            pie_trace = go.Pie(name=str(year),
                                labels=labels,
                                values=values,
                                hole=0.3,
@@ -94,23 +95,70 @@ class ChartCreator(object):
                                textposition='inside')
             fig.add_trace(pie_trace)
 
-        # create and add slider
-        steps = list()
-        for i in range(len(fig.data)):
-            step = dict(label=fig.data[i].name,
-                        method='restyle',
-                        args=['visible', [False] * len(fig.data)])
-            step['args'][1][i] = True # Toggle i'th trace to "visible"
-            steps.append(step)
-
-        slider = dict(active=len(fig.data) - 1,
-                      currentvalue={'prefix': 'Year: '},
-                      pad={'t': 0}, # vertical distance to chart
-                      steps=steps)
-
-        fig.layout.update(sliders=[slider])
+        ChartCreator._add_range_slider(fig)
 
         return plotly.offline.plot(fig, output_type='div', include_plotlyjs=False)
+
+    @staticmethod
+    def create_sunburst_plot(dataframe):
+
+        fig = go.Figure()
+        df_all_main_categories = pd.DataFrame(
+                data=list(filter(lambda category1: category1 is not config.INCOME_CATEGORY, config.categories.keys())),
+                columns=[config.CATEGORY_MAIN_COL])
+
+        for year in list(dataframe[config.DATE_COL].unique()):
+            df_year = dataframe.loc[dataframe[config.DATE_COL] == year, :]
+
+            # fist level
+            df_main_cat = df_year.groupby([config.CATEGORY_MAIN_COL]).sum()
+            df_main_cat = df_all_main_categories.merge(df_main_cat, how='outer', on=config.CATEGORY_MAIN_COL)
+
+            labels = list(df_main_cat[config.CATEGORY_MAIN_COL])
+            parents = [''] * len(labels)
+            values = list(df_main_cat[config.ABSAMOUNT_COL])
+
+            # second level
+            for index, row in df_year.iterrows():
+                labels.append(row[config.CATEGORY_SUB_COL])
+                parents.append(row[config.CATEGORY_MAIN_COL])
+                values.append(row[config.ABSAMOUNT_COL])
+
+            trace = gos.Sunburst(labels=labels,
+                                 parents=parents,
+                                 values=values,
+                                 visible=False,
+                                 hoverinfo='label+value+percent entry',
+                                 branchvalues='total',
+                                 name=str(year))
+            fig.add_trace(trace)
+
+        ChartCreator._add_range_slider(fig)
+
+        return plotly.offline.plot(fig, output_type='div', include_plotlyjs=False)
+
+
+    @staticmethod
+    def _add_range_slider(figure):
+        # create and add slider
+        traces = figure.data
+        steps = list()
+        for i in range(len(traces)):
+            trace = traces[i]
+            trace.visible = (i == len(traces) - 1)
+            step = dict(label=trace.name,
+                        method='restyle',
+                        args=['visible', [False] * len(traces)])
+            step['args'][1][i] = True  # Toggle i'th trace to "visible"
+            steps.append(step)
+
+        slider = dict(active=len(traces) - 1,
+                      currentvalue={'prefix': 'Year: '},
+                      pad={'t': 0},  # vertical distance to chart
+                      steps=steps)
+
+        figure.layout.update(sliders=[slider])
+
 
     @staticmethod
     def create_bubble_chart(result):

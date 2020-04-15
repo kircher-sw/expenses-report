@@ -34,13 +34,16 @@ class ExpensesReport(object):
 
         df_out = self._ta_preprocessor._formatter.get_out_transactions()
         df_out_agg_years = df_out.groupby([df_out.index.year, config.CATEGORY_MAIN_COL,
-                                           config.CATEGORY_SUB_COL])[config.ABSAMOUNT_COL].sum()
-        df = df_out_agg_years[df_out_agg_years.index.get_level_values(0) == 2020].reset_index()
-        df.loc[df.sub_category == '', config.CATEGORY_SUB_COL] = None # do not plot missing values
-        fig = px.sunburst(df,
-                          path=[config.CATEGORY_MAIN_COL, config.CATEGORY_SUB_COL],
-                          values=config.ABSAMOUNT_COL)
-        sunburst_chart = plotly.offline.plot(fig, output_type='div', include_plotlyjs=False)
+                                           config.CATEGORY_SUB_COL])[config.ABSAMOUNT_COL].sum().reset_index()
+        df_out_agg_years.loc[df_out_agg_years.sub_category == '', config.CATEGORY_SUB_COL] = None  # do not plot missing values
+
+
+        #df = df_out_agg_years[df_out_agg_years.index.year == 2020]
+        #fig = px.sunburst(df,
+        #                  path=[config.CATEGORY_MAIN_COL, config.CATEGORY_SUB_COL],
+        #                  values=config.ABSAMOUNT_COL)
+        #sunburst_chart = plotly.offline.plot(fig, output_type='div', include_plotlyjs=False)
+        sunburst_chart = ChartCreator.create_sunburst_plot(df_out_agg_years)
         self._charts.append(sunburst_chart)
 
 
@@ -68,8 +71,9 @@ def import_csv_files():
 
 
 def remove_internal_transactions(transactions):
-    own_account_numbers = set(list(map(lambda ta: ta.account_no, transactions)))
+    own_account_numbers = set(map(lambda ta: ta.account_no, transactions)) | config.OWN_ACCOUNTS
     clean_transactions = list(filter(lambda ta: ta.other_account_no not in own_account_numbers, transactions))
+    #internal_transactions = set(transactions) - set(clean_transactions)
     return clean_transactions
 
 def assign_category_to_transactions():
@@ -94,7 +98,12 @@ def print_transactions_statistics(transactions):
     pd.set_option('display.max_rows', None)
     pd.set_option('display.width', 2000)
     df_all = _expenses_report._ta_preprocessor._formatter.get_all_transactions()
-    print(df_all.sort_values(by=[config.CATEGORY_MAIN_COL, config.CATEGORY_SUB_COL]))
+
+    #print(df_all.sort_values(by=[config.CATEGORY_MAIN_COL, config.CATEGORY_SUB_COL]))
+
+    print(df_all.sort_values(by=[config.DATE_COL, config.CATEGORY_MAIN_COL, config.CATEGORY_SUB_COL]).loc[:,
+          [config.CATEGORY_MAIN_COL, config.CATEGORY_SUB_COL, config.AMOUNT_COL, config.PAYMENT_REASON_COL,
+           config.RECIPIENT_COL]])
 
 
 def calculate_charts():
