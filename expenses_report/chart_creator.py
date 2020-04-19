@@ -4,147 +4,203 @@ import plotly.graph_objects as gos
 import pandas as pd
 
 from expenses_report.config import config
+from expenses_report.preprocessing.data_formatter import DataFormatter
 
 
 class ChartCreator(object):
 
     @staticmethod
-    def create_stacked_area_plot(x_axes, values_all_categories, show_range_selectors=False):
-        traces_unsorted = list()
+    def create_stacked_area_plot(x_axis, values_all_categories, show_range_selectors=False):
+        figure = go.Figure()
         for category_name in values_all_categories.keys():
-            trace_category = go.Scatter(x=x_axes,
-                                        y=values_all_categories[category_name],
-                                        name=config.INCOME_CATEGORY,
-                                        line=config.INCOME_LINE_STYLE) \
-                             if category_name == config.INCOME_CATEGORY else \
-                             go.Scatter(x=x_axes,
-                                        y=values_all_categories[category_name],
-                                        name=config.GAIN_CATEGORY,
-                                        line=config.GAIN_LINE_STYLE) \
-                             if category_name == config.GAIN_CATEGORY else \
-                             go.Scatter(x=x_axes,
-                                        y=values_all_categories[category_name],
-                                        name=category_name,
-                                        mode='lines',
-                                        stackgroup='out')
-            traces_unsorted.append(trace_category)
+            trace = go.Scatter(x=x_axis,
+                               y=values_all_categories[category_name],
+                               name=config.INCOME_CATEGORY,
+                               line=config.INCOME_LINE_STYLE) \
+                    if category_name == config.INCOME_CATEGORY else \
+                    go.Scatter(x=x_axis,
+                               y=values_all_categories[category_name],
+                               name=category_name,
+                               mode='lines',
+                               stackgroup='out')
+            figure.add_trace(trace)
 
-        traces = ChartCreator._sort_legend_by_config_order(traces_unsorted)
-
-        layout = dict(yaxis=dict(title=config.CURRENCY_LABEL))
-        x_axes_layout = ChartCreator._get_x_axes_layout(x_axes)
-        if x_axes_layout:
-            layout['xaxis'] = x_axes_layout
+        # layout options
+        ChartCreator._sort_legend(figure, config.categories.keys())
+        ChartCreator._set_x_axis_layout(figure, x_axis)
+        ChartCreator._set_y_axis_layout(figure)
 
         if show_range_selectors:
-            ChartCreator._add_range_selectors(layout)
+            ChartCreator._add_time_span_selectors(figure)
 
-        return plotly.offline.plot(dict(data=traces, layout=layout), output_type='div', include_plotlyjs=False)
+        return ChartCreator._create_plot(figure)
 
-    @staticmethod
-    def _get_x_axes_layout(x_axes):
-        x_axes_layout = None
-        if len(x_axes) >= 2:
-            if (x_axes[1] - x_axes[0]).days >= 365: # year resolution
-                x_axes_layout = dict(tickformat='%Y', nticks=len(x_axes))
-            elif (x_axes[1] - x_axes[0]).days >= 28: # month resolution
-                x_axes_layout = dict(tickformat='%b %Y')
-        return x_axes_layout
 
     @staticmethod
-    def _sort_legend_by_config_order(traces_unsorted):
-        traces = list()
-        all_categories = list(config.categories.keys())
-        for category_name in reversed(all_categories):
+    def create_multi_stacked_area_plot(x_axis, values_main_categories, show_range_selectors=True):
+        figure = go.Figure()
+        main_category_counts = list()
+        for main_category in values_main_categories.keys():
+            values_sub_category = values_main_categories[main_category]
+            main_category_counts.append(len(values_sub_category))
+            for sub_category in values_sub_category.keys():
+                figure.add_trace(go.Scatter(x=x_axis,
+                                            y=values_sub_category[sub_category],
+                                            name=sub_category,
+                                            mode='lines',
+                                            visible=False,
+                                            stackgroup=main_category))
+
+        # layout options
+        ChartCreator._set_x_axis_layout(figure, x_axis)
+        ChartCreator._set_y_axis_layout(figure)
+        ChartCreator._add_main_category_buttons(figure, values_main_categories.keys(), main_category_counts)
+
+        if show_range_selectors:
+            ChartCreator._add_time_span_selectors(figure)
+
+        return ChartCreator._create_plot(figure)
+
+
+    @staticmethod
+    def create_bubble_chart(result):
+        figure = go.Figure()
+        for category_name in result.keys():
+            x_values, y_values, ratios, labels = result[category_name]
+            size = [max(15, ratio * 10000) for ratio in ratios]
+            figure.add_trace(go.Scatter(x=x_values,
+                                        y=y_values,
+                                        name=category_name,
+                                        hovertext=labels,
+                                        mode='markers',
+                                        marker=dict(size=size,
+                                                    sizemode='area',
+                                                    line=dict(width=2))))
+
+        ChartCreator._set_y_axis_layout(figure)
+        ChartCreator._add_time_span_selectors(figure)
+        figure.layout.update(yaxis=dict(type='log'))
+
+        return ChartCreator._create_plot(figure)
+
+
+    @staticmethod
+    def create_pie_plot(results):
+        # create pie charts for each year
+        figure = go.Figure()
+        for year in results.keys():
+            total, labels, values = results[year]
+            figure.add_trace(go.Pie(name=str(year),
+                                    labels=labels,
+                                    values=values,
+                                    hole=0.3,
+                                    title=f'{year}<br>{total:.2f} {config.CURRENCY_LABEL}',
+                                    textinfo='label+value+percent',
+                                    textposition='inside'))
+
+        ChartCreator._add_range_slider(figure)
+
+        return ChartCreator._create_plot(figure)
+
+
+    @staticmethod
+    def create_sunburst_plot(dataframe):
+        out_categories = list(filter(lambda cat: cat is not config.INCOME_CATEGORY, config.categories.keys()))
+        color_map = dict((cat, out_categories.index(cat) / (len(out_categories)-1)) for cat in out_categories)
+
+        figure = go.Figure()
+        for year in list(dataframe[config.DATE_COL].unique()):
+            df_year = dataframe.loc[dataframe[config.DATE_COL] == year, :]
+            df_all_trees = DataFormatter.build_hierarchical_dataframe(df_year,
+                                                                      str(year),
+                                                                      [config.CATEGORY_SUB_COL, config.CATEGORY_MAIN_COL],
+                                                                      config.ABSAMOUNT_COL,
+                                                                      color_map)
+
+            figure.add_trace(gos.Sunburst(labels=df_all_trees['id'],
+                                          parents=df_all_trees['parent'],
+                                          values=df_all_trees['value'],
+                                          #marker=dict(colors=df_all_trees['color'], colorscale='RdBu', cmid=0.5),
+                                          visible=False,
+                                          hoverinfo='label+value+percent entry',
+                                          branchvalues='total',
+                                          name=str(year)))
+
+        ChartCreator._add_range_slider(figure)
+        return ChartCreator._create_plot(figure)
+
+
+
+    @staticmethod
+    def _sort_legend(figure, category_order):
+        traces_unsorted = figure.data
+        figure.data = []
+        for category_name in reversed(list(category_order)):
             trace = next((t for t in traces_unsorted if t.name == category_name), None)
             if trace:
-                traces.append(trace)
-        return traces
+                figure.add_trace(trace)
 
     @staticmethod
-    def _add_range_selectors(layout):
-        current_xaxis = layout['xaxis'] if 'xaxis' in layout else dict()
-        new_xaxis = dict(
+    def _set_x_axis_layout(figure, x_axis):
+        x_axis_layout = None
+        if len(x_axis) >= 2:
+            if (x_axis[1] - x_axis[0]).days >= 365:  # year resolution
+                x_axis_layout = dict(tickformat='%Y', nticks=len(x_axis))
+            elif (x_axis[1] - x_axis[0]).days >= 28:  # month resolution
+                x_axis_layout = dict(tickformat='%b %Y')
+
+        if x_axis_layout:
+            figure.layout.update(xaxis=x_axis_layout)
+
+    @staticmethod
+    def _set_y_axis_layout(figure):
+        figure.layout.update(yaxis=dict(title=config.CURRENCY_LABEL))
+
+    @staticmethod
+    def _add_main_category_buttons(figure, categories, category_counts):
+        buttons = list()
+        for i, category in enumerate(categories):
+            button = dict(label=category,
+                          method='restyle',
+                          args=['visible', [False] * len(figure.data)])
+
+            trace_offset = sum(category_counts[:i])
+            trace_count = category_counts[i]
+            for j in range(trace_count):
+                button['args'][1][trace_offset + j] = True  # Toggle i'th trace to "visible"
+                figure.data[trace_offset + j].visible = (i == 0)
+
+            buttons.append(button)
+
+        button_menu = dict(buttons=buttons,
+                           type='buttons',
+                           direction='right',
+                           pad={"r": 0, "b": 40},
+                           showactive=True,
+                           x=0,
+                           xanchor="left",
+                           y=1,
+                           yanchor="bottom")
+
+        figure.layout.update(updatemenus=[button_menu])
+
+    @staticmethod
+    def _add_time_span_selectors(figure):
+        x_axis = dict(
             rangeselector=dict(
                 buttons=list([
                     dict(count=6, step='month', label='6m', stepmode='backward'),
                     dict(count=1, step='year', label='1y', stepmode='backward'),
                     dict(count=3, step='year', label='3y', stepmode='backward'),
-                    dict(step='all')
-                ])
-            ),
-            #rangeslider=dict(
-            #    visible=True,
-            #    thickness=0.08
-            #),
+                    dict(step='all')])),
             type='date')
-        layout['xaxis'] = {**current_xaxis, **new_xaxis}
-
-    @staticmethod
-    def create_pie_plot(results):
-        # create pie charts for each year
-        fig = go.Figure()
-        for year in results.keys():
-            total, labels, values = results[year]
-            pie_trace = go.Pie(name=str(year),
-                               labels=labels,
-                               values=values,
-                               hole=0.3,
-                               title=f'{year}<br>{total:.2f} {config.CURRENCY_LABEL}',
-                               textinfo='label+value+percent',
-                               textposition='inside')
-            fig.add_trace(pie_trace)
-
-        ChartCreator._add_range_slider(fig)
-
-        return plotly.offline.plot(fig, output_type='div', include_plotlyjs=False)
-
-    @staticmethod
-    def create_sunburst_plot(dataframe):
-
-        fig = go.Figure()
-        df_all_main_categories = pd.DataFrame(
-                data=list(filter(lambda category1: category1 is not config.INCOME_CATEGORY, config.categories.keys())),
-                columns=[config.CATEGORY_MAIN_COL])
-
-        for year in list(dataframe[config.DATE_COL].unique()):
-            df_year = dataframe.loc[dataframe[config.DATE_COL] == year, :]
-
-            # fist level
-            df_main_cat = df_year.groupby([config.CATEGORY_MAIN_COL]).sum()
-            df_main_cat = df_all_main_categories.merge(df_main_cat, how='outer', on=config.CATEGORY_MAIN_COL)
-
-            labels = list(df_main_cat[config.CATEGORY_MAIN_COL])
-            parents = [''] * len(labels)
-            values = list(df_main_cat[config.ABSAMOUNT_COL])
-
-            # second level
-            for index, row in df_year.iterrows():
-                labels.append(row[config.CATEGORY_SUB_COL])
-                parents.append(row[config.CATEGORY_MAIN_COL])
-                values.append(row[config.ABSAMOUNT_COL])
-
-            trace = gos.Sunburst(labels=labels,
-                                 parents=parents,
-                                 values=values,
-                                 visible=False,
-                                 hoverinfo='label+value+percent entry',
-                                 branchvalues='total',
-                                 name=str(year))
-            fig.add_trace(trace)
-
-        ChartCreator._add_range_slider(fig)
-
-        return plotly.offline.plot(fig, output_type='div', include_plotlyjs=False)
-
+        figure.layout.update(xaxis=x_axis)
 
     @staticmethod
     def _add_range_slider(figure):
-        # create and add slider
         traces = figure.data
         steps = list()
-        for i in range(len(traces)):
-            trace = traces[i]
+        for i, trace in enumerate(traces):
             trace.visible = (i == len(traces) - 1)
             step = dict(label=trace.name,
                         method='restyle',
@@ -159,24 +215,6 @@ class ChartCreator(object):
 
         figure.layout.update(sliders=[slider])
 
-
     @staticmethod
-    def create_bubble_chart(result):
-        traces = list()
-        for category_name in result.keys():
-            x_values, y_values, ratios, labels = result[category_name]
-            size = [max(15, ratio * 10000) for ratio in ratios]
-            traces.append(go.Scatter(x=x_values,
-                                     y=y_values,
-                                     name=category_name,
-                                     hovertext=labels,
-                                     mode='markers',
-                                     marker=dict(size=size,
-                                                 sizemode='area',
-                                                 line=dict(width=2))))
-
-        layout = dict(yaxis=dict(title=config.CURRENCY_LABEL, type='log'))
-        ChartCreator._add_range_selectors(layout)
-
-        fig = go.Figure(data=traces, layout=layout)
-        return plotly.offline.plot(fig, output_type='div', include_plotlyjs=False)
+    def _create_plot(figure):
+        return plotly.offline.plot(figure, output_type='div', include_plotlyjs=False)

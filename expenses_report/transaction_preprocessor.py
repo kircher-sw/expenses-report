@@ -21,31 +21,21 @@ class TransactionPreprocessor(object):
         :return: [date range], { category1-name: [category1 values], ... }
         """
 
-        # create full range of date values with the given period
-        df_all = self._formatter.get_all_transactions()
-        df_all_dates = self._formatter.get_full_date_range(aggregation_period)
-        x_axis = list(df_all_dates.index.to_timestamp())
-
-        values_all_categories = dict()
-
         # income
         df_in = self._formatter.get_in_transactions()
         df_in = self._formatter.aggregate_data(df_in, aggregation_period)
-        values_all_categories[config.INCOME_CATEGORY] = df_in[config.ABSAMOUNT_COL].values
-
-        # gain
-        #df_gain = df_all.resample(aggregation_period).sum().reindex(range_of_all_dates).fillna(0)
-        #values_all_categories[config.GAIN_CATEGORY] = df_gain[config.AMOUNT_COL].values
 
         # expenses
         df_out = self._formatter.get_out_transactions()
         period = aggregation_period.rstrip('S') if len(aggregation_period) > 1 else aggregation_period
         df_out_agg = df_out.groupby([df_out.index.to_period(period), config.CATEGORY_MAIN_COL])[config.ABSAMOUNT_COL].sum()
 
-        for category_name, df_category in df_out_agg.groupby(config.CATEGORY_MAIN_COL):
-            result = pd.merge(df_all_dates, df_category, on=config.DATE_COL, how='left')
-            values_out_category = result.fillna(0)[config.ABSAMOUNT_COL].values
-            values_all_categories[category_name] = values_out_category
+        df_all_dates = self._formatter.get_full_date_range(aggregation_period)
+        x_axis, out_traces = DataFormatter.create_traces_for_groups(df_out_agg, config.CATEGORY_MAIN_COL, df_all_dates, config.ABSAMOUNT_COL)
+
+        values_all_categories = dict()
+        values_all_categories[config.INCOME_CATEGORY] = df_in[config.ABSAMOUNT_COL].values
+        values_all_categories = {**values_all_categories, **out_traces}
 
         return (x_axis, values_all_categories)
 

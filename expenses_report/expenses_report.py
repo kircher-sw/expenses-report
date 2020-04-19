@@ -3,13 +3,12 @@ from expenses_report.config import config
 from expenses_report.argument_parser import ArgumentParser
 from expenses_report.preprocessing.csv_importer import CsvImporter
 from expenses_report.preprocessing.category_finder import CategoryFinder
+from expenses_report.preprocessing.data_formatter import DataFormatter
 from expenses_report.transaction_preprocessor import TransactionPreprocessor
 from expenses_report.chart_creator import ChartCreator
 from expenses_report.html_report import HtmlReport
 
 import pandas as pd
-import plotly
-import plotly.express as px
 
 
 class ExpensesReport(object):
@@ -24,6 +23,26 @@ class ExpensesReport(object):
         x_axis, values_all_categories = self._ta_preprocessor.aggregate_transactions_by_category(aggregation_period='MS')
         self._charts.append(ChartCreator.create_stacked_area_plot(x_axis, values_all_categories, show_range_selectors=True))
 
+    def create_stacked_area_chare_with_month_frequency_for_each_category(self):
+        df_all = self._ta_preprocessor._formatter.get_all_transactions()
+        df_agg_months = df_all.groupby([df_all.index.to_period('M'), config.CATEGORY_MAIN_COL,
+                                        config.CATEGORY_SUB_COL])[config.ABSAMOUNT_COL].sum().reset_index()
+        df_agg_months.loc[df_agg_months.sub_category == '', config.CATEGORY_SUB_COL] = config.MISC_CATEGORY
+
+        df_all_dates = self._ta_preprocessor._formatter.get_full_date_range('MS')
+
+        values_main_categories = dict()
+        x_axis = list()
+        for category in config.categories.keys():
+            df_cat = df_agg_months.loc[df_agg_months[config.CATEGORY_MAIN_COL] == category, [config.DATE_COL, config.CATEGORY_SUB_COL, config.ABSAMOUNT_COL]]
+
+            x_axis, values_sub_categories = DataFormatter.create_traces_for_groups(df_cat, config.CATEGORY_SUB_COL, df_all_dates, config.ABSAMOUNT_COL)
+            values_main_categories[category] = values_sub_categories
+
+        cat_stacked_chart = ChartCreator.create_multi_stacked_area_plot(x_axis, values_main_categories)
+        self._charts.append(cat_stacked_chart)
+
+
     def create_stacked_area_chart_with_year_frequency(self):
         x_axis, values_all_categories = self._ta_preprocessor.aggregate_transactions_by_category(aggregation_period='YS')
         self._charts.append(ChartCreator.create_stacked_area_plot(x_axis, values_all_categories))
@@ -37,12 +56,6 @@ class ExpensesReport(object):
                                            config.CATEGORY_SUB_COL])[config.ABSAMOUNT_COL].sum().reset_index()
         df_out_agg_years.loc[df_out_agg_years.sub_category == '', config.CATEGORY_SUB_COL] = None  # do not plot missing values
 
-
-        #df = df_out_agg_years[df_out_agg_years.index.year == 2020]
-        #fig = px.sunburst(df,
-        #                  path=[config.CATEGORY_MAIN_COL, config.CATEGORY_SUB_COL],
-        #                  values=config.ABSAMOUNT_COL)
-        #sunburst_chart = plotly.offline.plot(fig, output_type='div', include_plotlyjs=False)
         sunburst_chart = ChartCreator.create_sunburst_plot(df_out_agg_years)
         self._charts.append(sunburst_chart)
 
@@ -108,10 +121,11 @@ def print_transactions_statistics(transactions):
 
 def calculate_charts():
     _expenses_report.create_stacked_area_chart_with_month_frequency()
+    _expenses_report.create_stacked_area_chare_with_month_frequency_for_each_category()
     _expenses_report.create_stacked_area_chart_with_year_frequency()
     _expenses_report.create_pie_chart_with_categories_by_year()
-    _expenses_report.create_stacked_area_with_cumulative_categories()
     _expenses_report.create_transaction_bubble_chart()
+    _expenses_report.create_stacked_area_with_cumulative_categories()
 
 
 def write_report():

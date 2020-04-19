@@ -63,3 +63,44 @@ class DataFormatter(object):
     def aggregate_data(self, dataframe, aggregation_period='MS'):
         df_all_dates = self.get_full_date_range(aggregation_period)
         return dataframe.resample(aggregation_period).sum().reindex(df_all_dates.index.to_timestamp()).fillna(0)
+
+
+    @staticmethod
+    def build_hierarchical_dataframe(df, root_label, levels, value_column, color_map):
+        """
+        Build a hierarchy of levels for Sunburst or Treemap charts.
+
+        Levels are given starting from the bottom to the top of the hierarchy,
+        ie the last level corresponds to the root.
+        """
+        columns = ['id', 'parent', 'value', 'color']
+        df_all_trees = pd.DataFrame(columns=columns)
+        for i, level in enumerate(levels):
+            df_tree = pd.DataFrame(columns=columns)
+            dfg = df.groupby(levels[i:]).sum()
+            dfg = dfg.reset_index()
+            df_tree['id'] = dfg[level].copy()
+            if i < len(levels) - 1:
+                df_tree['parent'] = dfg[levels[i + 1]].copy()
+            else:
+                df_tree['parent'] = root_label
+            df_tree['value'] = dfg[value_column]
+            df_tree['color'] = df_tree.apply(lambda row: color_map[row['id']] if row['id'] in color_map.keys() else 0.5, axis=1)
+            df_all_trees = df_all_trees.append(df_tree, ignore_index=True)
+        root_node = pd.Series(dict(id=root_label,
+                                   parent='',
+                                   value=df[value_column].sum(),
+                                   color=0))
+        df_all_trees = df_all_trees.append(root_node, ignore_index=True)
+        return df_all_trees
+
+    @staticmethod
+    def create_traces_for_groups(df, group_label, df_all_dates, value_column):
+        traces = dict()
+        x_axis = list(df_all_dates.index.to_timestamp())
+        for category_name, df_category in df.groupby(group_label):
+            df_result = pd.merge(df_all_dates, df_category, on=config.DATE_COL, how='left')
+            values_category = df_result.fillna(0)[value_column].values
+            traces[category_name] = values_category
+
+        return x_axis, traces
