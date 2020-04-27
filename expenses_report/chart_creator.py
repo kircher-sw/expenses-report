@@ -1,13 +1,52 @@
+import math
 import plotly
-import plotly.graph_objs as go
-import plotly.graph_objects as gos
-import pandas as pd
+#import plotly.graph_objs as go
+import plotly.graph_objects as go
+import plotly.subplots as sp
 
 from expenses_report.config import config
 from expenses_report.preprocessing.data_formatter import DataFormatter
 
 
-class ChartCreator(object):
+class ChartBuilder(object):
+
+    @staticmethod
+    def create_trend_chart_with_table(x_axis, values_all_categories, dataframe, show_range_selectors=False):
+        figure = go.Figure()
+        figure = sp.make_subplots(rows=1, cols=2,
+                                  column_widths=[0.3, 0.7],
+                                  horizontal_spacing=0.08,
+                                  specs = [[{"type": "table"}, {"type": "scatter"}]])
+
+        for category_name in values_all_categories.keys():
+            trace = go.Scatter(x=x_axis,
+                               y=values_all_categories[category_name],
+                               name=config.INCOME_CATEGORY,
+                               line=config.INCOME_LINE_STYLE) \
+                if category_name == config.INCOME_CATEGORY else \
+                go.Scatter(x=x_axis,
+                           y=values_all_categories[category_name],
+                           name=category_name,
+                           mode='lines',
+                           stackgroup='out')
+            figure.add_trace(trace, 1, 2)
+
+        ChartBuilder._sort_legend(figure, config.categories.keys())
+
+        figure.add_trace(go.Table(header=dict(values=['Category', 'Average'],
+                                               align='left'),
+                                  cells=dict(values=[dataframe[config.CATEGORY_MAIN_COL], dataframe[config.ABSAMOUNT_COL]],
+                                             align=['left', 'right'],
+                                             format=[None, '.2f'])), 1, 1)
+
+        # layout options
+        ChartBuilder._set_x_axis_layout(figure, x_axis)
+        ChartBuilder._set_y_axis_layout(figure)
+
+        if show_range_selectors:
+            ChartBuilder._add_time_span_selectors(figure)
+
+        return ChartBuilder._create_plot(figure)
 
     @staticmethod
     def create_stacked_area_plot(x_axis, values_all_categories, show_range_selectors=False):
@@ -26,14 +65,14 @@ class ChartCreator(object):
             figure.add_trace(trace)
 
         # layout options
-        ChartCreator._sort_legend(figure, config.categories.keys())
-        ChartCreator._set_x_axis_layout(figure, x_axis)
-        ChartCreator._set_y_axis_layout(figure)
+        ChartBuilder._sort_legend(figure, config.categories.keys())
+        ChartBuilder._set_x_axis_layout(figure, x_axis)
+        ChartBuilder._set_y_axis_layout(figure)
 
         if show_range_selectors:
-            ChartCreator._add_time_span_selectors(figure)
+            ChartBuilder._add_time_span_selectors(figure)
 
-        return ChartCreator._create_plot(figure)
+        return ChartBuilder._create_plot(figure)
 
 
     @staticmethod
@@ -52,21 +91,23 @@ class ChartCreator(object):
                                             stackgroup=main_category))
 
         # layout options
-        ChartCreator._set_x_axis_layout(figure, x_axis)
-        ChartCreator._set_y_axis_layout(figure)
-        ChartCreator._add_main_category_buttons(figure, values_main_categories.keys(), main_category_counts)
+        ChartBuilder._set_x_axis_layout(figure, x_axis)
+        ChartBuilder._set_y_axis_layout(figure)
+        ChartBuilder._add_main_category_buttons(figure, values_main_categories.keys(), main_category_counts)
 
         if show_range_selectors:
-            ChartCreator._add_time_span_selectors(figure)
+            ChartBuilder._add_time_span_selectors(figure)
 
-        return ChartCreator._create_plot(figure)
+        return ChartBuilder._create_plot(figure)
 
 
     @staticmethod
     def create_bubble_chart(result):
         figure = go.Figure()
+        max_value = 0
         for category_name in result.keys():
             x_values, y_values, ratios, labels = result[category_name]
+            max_value = max(max_value, max(y_values))
             size = [max(15, ratio * 10000) for ratio in ratios]
             figure.add_trace(go.Scatter(x=x_values,
                                         y=y_values,
@@ -77,11 +118,11 @@ class ChartCreator(object):
                                                     sizemode='area',
                                                     line=dict(width=2))))
 
-        ChartCreator._set_y_axis_layout(figure)
-        ChartCreator._add_time_span_selectors(figure)
-        figure.layout.update(yaxis=dict(type='log'))
+        ChartBuilder._set_y_axis_layout(figure)
+        ChartBuilder._add_time_span_selectors(figure)
+        figure.layout.update(yaxis=dict(type='log', range=[0, math.ceil(math.log10(max_value))]))
 
-        return ChartCreator._create_plot(figure)
+        return ChartBuilder._create_plot(figure)
 
 
     @staticmethod
@@ -98,9 +139,9 @@ class ChartCreator(object):
                                     textinfo='label+value+percent',
                                     textposition='inside'))
 
-        ChartCreator._add_range_slider(figure)
+        ChartBuilder._add_range_slider(figure)
 
-        return ChartCreator._create_plot(figure)
+        return ChartBuilder._create_plot(figure)
 
 
     @staticmethod
@@ -117,7 +158,7 @@ class ChartCreator(object):
                                                                       config.ABSAMOUNT_COL,
                                                                       color_map)
 
-            figure.add_trace(gos.Sunburst(labels=df_all_trees['id'],
+            figure.add_trace(go.Sunburst(labels=df_all_trees['id'],
                                           parents=df_all_trees['parent'],
                                           values=df_all_trees['value'],
                                           #marker=dict(colors=df_all_trees['color'], colorscale='RdBu', cmid=0.5),
@@ -126,9 +167,19 @@ class ChartCreator(object):
                                           branchvalues='total',
                                           name=str(year)))
 
-        ChartCreator._add_range_slider(figure)
-        return ChartCreator._create_plot(figure)
+        ChartBuilder._add_range_slider(figure)
+        return ChartBuilder._create_plot(figure)
 
+
+    @staticmethod
+    def create_table(dataframe):
+        figure = go.Figure()
+        figure.add_trace(go.Table(header=dict(values=['Category', 'Average'],
+                                               align='left'),
+                                   cells=dict(values=[dataframe[k].tolist() for k in dataframe.columns],
+                                              align=['left', 'right'],
+                                              format=[None, '.2f'])))
+        return ChartBuilder._create_plot(figure)
 
 
     @staticmethod
