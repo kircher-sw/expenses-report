@@ -54,4 +54,5 @@ class HtmlReport(object):
         f = open(config.OUT_FILE, 'w')
         f.write(html_report)
         f.close()
+        print(f'\nReport created in {config.OUT_FILE}')
 

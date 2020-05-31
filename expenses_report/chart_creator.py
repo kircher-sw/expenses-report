@@ -11,7 +11,7 @@ from expenses_report.preprocessing.data_formatter import DataFormatter
 class ChartBuilder(object):
 
     @staticmethod
-    def create_trend_chart_with_table(x_axis, values_all_categories, dataframe, show_range_selectors=False):
+    def create_trend_chart_with_table(x_axis, values_all_categories, df_summaries, show_range_selectors=False):
         figure = go.Figure()
         figure = sp.make_subplots(rows=1, cols=2,
                                   column_widths=[0.3, 0.7],
@@ -33,11 +33,41 @@ class ChartBuilder(object):
 
         ChartBuilder._sort_legend(figure, config.categories.keys())
 
-        figure.add_trace(go.Table(header=dict(values=['Category', 'Average'],
-                                               align='left'),
-                                  cells=dict(values=[dataframe[config.CATEGORY_MAIN_COL], dataframe[config.ABSAMOUNT_COL]],
-                                             align=['left', 'right'],
-                                             format=[None, '.2f'])), 1, 1)
+
+        for df in df_summaries:
+            figure.add_trace(go.Table(header=dict(values=['Category', f'Average [{config.CURRENCY_LABEL}]'],
+                                                   align='left'),
+                                      cells=dict(values=[df[config.CATEGORY_MAIN_COL], df[config.ABSAMOUNT_COL]],
+                                                 align=['left', 'right'],
+                                                 format=[None, '.2f'])), 1, 1)
+
+        buttons = list()
+        time_range_labels = ['3m', '6m', '1y', '3y', 'all']
+        for i, label in enumerate(time_range_labels):
+            button = dict(label=label,
+                          method='restyle',
+                          args=['visible', [True] * len(values_all_categories) + [False] * len(df_summaries)])
+
+            trace_offset = len(values_all_categories)
+            button['args'][1][trace_offset + i] = True  # Toggle i'th trace to "visible"
+            figure.data[trace_offset + i].visible = (i == len(time_range_labels)-1)
+            buttons.append(button)
+
+        button_menu = dict(buttons=buttons,
+                           type='buttons',
+                           direction='right',
+                           pad={"r": 0, "b": 10},
+                           showactive=True,
+                           active=len(time_range_labels)-1,
+                           x=0,
+                           xanchor="left",
+                           y=1,
+                           yanchor="bottom")
+
+        figure.layout.update(updatemenus=[button_menu])
+
+
+
 
         # layout options
         ChartBuilder._set_x_axis_layout(figure, x_axis)
@@ -240,10 +270,11 @@ class ChartBuilder(object):
         x_axis = dict(
             rangeselector=dict(
                 buttons=list([
-                    dict(count=6, step='month', label='6m', stepmode='backward'),
-                    dict(count=1, step='year', label='1y', stepmode='backward'),
-                    dict(count=3, step='year', label='3y', stepmode='backward'),
-                    dict(step='all')])),
+                    dict(count=3-1, step='month', label='3m', stepmode='backward'),
+                    dict(count=6-1, step='month', label='6m', stepmode='backward'),
+                    dict(count=12-1, step='month', label='1y', stepmode='backward'),
+                    dict(count=36-1, step='month', label='3y', stepmode='backward'),
+                    dict(step='all', label='all')])),
             type='date')
         figure.layout.update(xaxis=x_axis)
 

@@ -26,20 +26,29 @@ class ExpensesReport(object):
         df_all = self._ta_preprocessor._formatter.get_all_transactions()
         df_agg_months = df_all.groupby([df_all.index.to_period('M'), config.CATEGORY_MAIN_COL])[
             config.ABSAMOUNT_COL].sum().reset_index()
-        df_mean = df_agg_months.groupby([config.CATEGORY_MAIN_COL])[config.ABSAMOUNT_COL].mean().reset_index()
 
-        # sort by category order as defined in config
-        configOrder = list(config.categories.keys())
-        df_mean['index'] = df_mean.apply(lambda row: configOrder.index(row[config.CATEGORY_MAIN_COL]) if row[config.CATEGORY_MAIN_COL] in configOrder else 1000, axis=1)
+        df_summaries = list()
+        for m in [3, 6, 12, 36, 100*12]:
+            end_month = df_agg_months[config.DATE_COL].max()
+            start_month = (end_month.to_timestamp() - pd.Timedelta(m-1, unit='M')).to_period('M')
 
-        total_out = df_mean[config.ABSAMOUNT_COL].sum() - df_mean.loc[
-            df_mean[config.CATEGORY_MAIN_COL] == config.INCOME_CATEGORY, config.ABSAMOUNT_COL]
-        df_mean = df_mean.append(pd.Series({config.CATEGORY_MAIN_COL: 'Ausgaben', config.ABSAMOUNT_COL: total_out, 'index': -2}), ignore_index=True)
-        df_mean = df_mean.append(pd.Series({config.CATEGORY_MAIN_COL: '', config.ABSAMOUNT_COL: None, 'index': -1}), ignore_index=True)
-        df_mean.loc[df_mean[config.CATEGORY_MAIN_COL] == config.INCOME_CATEGORY, 'index'] = -3
-        df_mean = df_mean.sort_values(by=['index'])
+            df_range = df_agg_months[df_agg_months[config.DATE_COL].between(start_month, end_month)]
 
-        trendAndTableChart = ChartBuilder.create_trend_chart_with_table(x_axis, values_all_categories, df_mean, show_range_selectors=True)
+            df_mean = df_range.groupby([config.CATEGORY_MAIN_COL])[config.ABSAMOUNT_COL].mean().reset_index()
+
+            # sort by category order as defined in config
+            configOrder = list(config.categories.keys())
+            df_mean['index'] = df_mean.apply(lambda row: configOrder.index(row[config.CATEGORY_MAIN_COL]) if row[config.CATEGORY_MAIN_COL] in configOrder else 1000, axis=1)
+
+            total_out = df_mean[config.ABSAMOUNT_COL].sum() - df_mean.loc[
+                df_mean[config.CATEGORY_MAIN_COL] == config.INCOME_CATEGORY, config.ABSAMOUNT_COL]
+            df_mean = df_mean.append(pd.Series({config.CATEGORY_MAIN_COL: 'Ausgaben', config.ABSAMOUNT_COL: total_out, 'index': -2}), ignore_index=True)
+            df_mean = df_mean.append(pd.Series({config.CATEGORY_MAIN_COL: '-----', config.ABSAMOUNT_COL: None, 'index': -1}), ignore_index=True)
+            df_mean.loc[df_mean[config.CATEGORY_MAIN_COL] == config.INCOME_CATEGORY, 'index'] = -3
+            df_mean = df_mean.sort_values(by=['index'])
+            df_summaries.append(df_mean)
+
+        trendAndTableChart = ChartBuilder.create_trend_chart_with_table(x_axis, values_all_categories, df_summaries, show_range_selectors=True)
         self._charts.append(trendAndTableChart)
 
     def create_stacked_area_chare_with_month_frequency_for_each_category(self):
