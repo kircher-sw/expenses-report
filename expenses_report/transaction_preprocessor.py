@@ -1,4 +1,5 @@
 import pandas as pd
+from itertools import product
 
 from expenses_report.config import config
 from expenses_report.preprocessing.data_formatter import DataFormatter
@@ -62,6 +63,45 @@ class TransactionPreprocessor(object):
         return result
 
 
+    def calculate_month_summaries(self, months):
+
+        df_all = self._formatter.get_all_transactions()
+        df_agg_months = df_all.groupby([df_all.index.to_period('M'), config.CATEGORY_MAIN_COL])[
+            config.ABSAMOUNT_COL].sum().reset_index()
+
+        df_summaries = list()
+        for m in months:
+            end_month = df_agg_months[config.DATE_COL].max()
+            start_month = (end_month.to_timestamp() - pd.Timedelta(m - 1, unit='M')).to_period('M')
+
+            df_range = df_agg_months[df_agg_months[config.DATE_COL].between(start_month, end_month)]
+
+            df_prod = pd.DataFrame(list(product(df_range[config.DATE_COL].unique(), config.categories.keys())),
+                                   columns=[config.DATE_COL, config.CATEGORY_MAIN_COL])
+            df_range_full = df_prod.merge(df_range, how='left').fillna(0)
+
+            df_mean = df_range_full.groupby([config.CATEGORY_MAIN_COL])[config.ABSAMOUNT_COL].mean().reset_index()
+
+            # sort by category order as defined in config
+            configOrder = list(config.categories.keys())
+            df_mean['index'] = df_mean.apply(lambda row: configOrder.index(row[config.CATEGORY_MAIN_COL]) if row[config.CATEGORY_MAIN_COL] in configOrder else 1000,
+                                             axis=1)
+
+            total_out = df_mean[config.ABSAMOUNT_COL].sum() - df_mean.loc[
+                df_mean[config.CATEGORY_MAIN_COL] == config.INCOME_CATEGORY, config.ABSAMOUNT_COL]
+            df_mean = df_mean.append(
+                pd.Series({config.CATEGORY_MAIN_COL: config.EXPENSES_LABEL, config.ABSAMOUNT_COL: total_out, 'index': -2}),
+                ignore_index=True)
+            df_mean = df_mean.append(
+                pd.Series({config.CATEGORY_MAIN_COL: '-----', config.ABSAMOUNT_COL: None, 'index': -1}),
+                ignore_index=True)
+            df_mean.loc[df_mean[config.CATEGORY_MAIN_COL] == config.INCOME_CATEGORY, 'index'] = -3
+            df_mean = df_mean.sort_values(by=['index'])
+            df_summaries.append(df_mean)
+
+        return df_summaries
+
+
     def accumulate_categories(self):
         """
         Accumulates all transactions by category
@@ -71,15 +111,10 @@ class TransactionPreprocessor(object):
         x_axis = list(map(lambda date: date, df_all.resample('D').sum().index))
         cumulative_categories = dict()
         for category_name in reversed(list(config.categories.keys())):
-            df_category = df_all if category_name == config.GAIN_CATEGORY else df_all[df_all.main_category == category_name]
+            df_category = df_all[df_all.main_category == category_name]
             df_category = df_category.resample('D').sum().reindex(df_all.index).resample('D').max().fillna(0)
 
-            agg_column = config.ABSAMOUNT_COL
-            if category_name == config.GAIN_CATEGORY:
-                df_category.loc[df_category.index.min(), config.AMOUNT_COL] += config.INITIAL_ACCOUNT_BALANCE
-                agg_column = config.AMOUNT_COL
-
-            values = list(df_category[agg_column].cumsum())
+            values = list(df_category[config.ABSAMOUNT_COL].cumsum())
             cumulative_categories[category_name] = values
 
         return (x_axis, cumulative_categories)

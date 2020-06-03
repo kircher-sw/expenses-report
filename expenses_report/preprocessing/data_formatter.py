@@ -85,7 +85,7 @@ class DataFormatter(object):
             else:
                 df_tree['parent'] = root_label
             df_tree['value'] = dfg[value_column]
-            df_tree['color'] = df_tree.apply(lambda row: color_map[row['id']] if row['id'] in color_map.keys() else 0.5, axis=1)
+            #df_tree['color'] = df_tree.apply(lambda row: color_map[row['id']] if row['id'] in color_map.keys() else 0.5, axis=1)
             df_all_trees = df_all_trees.append(df_tree, ignore_index=True)
         root_node = pd.Series(dict(id=root_label,
                                    parent='',
