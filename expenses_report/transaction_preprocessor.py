@@ -1,28 +1,20 @@
 import pandas as pd
+from itertools import product
 
-from expenses_report import config
+from expenses_report.config import config
+from expenses_report.preprocessing.data_formatter import DataFormatter
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
 class TransactionPreprocessor(object):
-    CATEGORY_COL = 'category'
-    ABSAMOUNT_COL = 'absamount'
-    LABEL = 'label'
-    _transactions = list()
-    _columns = None
-    _df_all = None
-    _df_in = None
-    _df_out = None
 
-    def __init__(self):
-        self._columns = list(config.import_mapping.keys()) + [self.CATEGORY_COL]
+    _formatter = None
 
     def set_transactions(self, transactions):
-        self._transactions = transactions
-        self._df_all = self._df_in = self._df_out = None
+        self._formatter = DataFormatter.load(transactions)
 
 
-    def aggregate_transactions_by_category(self, aggregation_period='M'):
+    def aggregate_transactions_by_category(self, aggregation_period='MS'):
         """
         Aggregates the transactions by category and the given aggregation period
         :param aggregation_period: 'M' group by month
@@ -30,33 +22,21 @@ class TransactionPreprocessor(object):
         :return: [date range], { category1-name: [category1 values], ... }
         """
 
-        # create full range of date values with the given period
-        df_all = self._get_dataframe_of_all_transactions()
-        end_date = df_all.index.max().to_period(aggregation_period).end_time.date()
-        range_of_all_dates = pd.date_range(start=df_all.index.min(), end=end_date, freq=aggregation_period)
-        df_all_dates = range_of_all_dates.to_period().to_frame(name=config.DATE_COL)
-        x_axis = list(map(lambda p: p.to_timestamp(), df_all_dates.index.values))
-
-        values_all_categories = dict()
-
         # income
-        df_in = self._get_dataframe_of_in_transactions()
-        df_in = df_in.resample(aggregation_period).sum().reindex(range_of_all_dates).fillna(0)
-        values_all_categories[config.INCOME_CATEGORY] = df_in[self.ABSAMOUNT_COL].values
-
-        # gain
-        df_gain = df_all.resample(aggregation_period).sum().reindex(range_of_all_dates).fillna(0)
-        values_all_categories[config.GAIN_CATEGORY] = df_gain[config.AMOUNT_COL].values
+        df_in = self._formatter.get_in_transactions()
+        df_in = self._formatter.aggregate_data(df_in, aggregation_period)
 
         # expenses
-        df_out = self._get_dataframe_of_out_transactions()
-        df_out_agg = df_out.groupby([pd.DatetimeIndex(df_out.index).to_period(aggregation_period),
-                                     self.CATEGORY_COL])[self.ABSAMOUNT_COL].sum()
+        df_out = self._formatter.get_out_transactions()
+        period = aggregation_period.rstrip('S') if len(aggregation_period) > 1 else aggregation_period
+        df_out_agg = df_out.groupby([df_out.index.to_period(period), config.CATEGORY_MAIN_COL])[config.ABSAMOUNT_COL].sum()
 
-        for category_name, df_category in df_out_agg.groupby(self.CATEGORY_COL):
-            result = pd.merge(df_all_dates, df_category, on=config.DATE_COL, how='left')
-            values_out_category = result.fillna(0)[self.ABSAMOUNT_COL].values
-            values_all_categories[category_name] = values_out_category
+        df_all_dates = self._formatter.get_full_date_range(aggregation_period)
+        x_axis, out_traces = DataFormatter.create_traces_for_groups(df_out_agg, config.CATEGORY_MAIN_COL, df_all_dates, config.ABSAMOUNT_COL)
+
+        values_all_categories = dict()
+        values_all_categories[config.INCOME_CATEGORY] = df_in[config.ABSAMOUNT_COL].values
+        values_all_categories = {**values_all_categories, **out_traces}
 
         return (x_axis, values_all_categories)
 
@@ -67,8 +47,8 @@ class TransactionPreprocessor(object):
         :return: { year: (total, [category names], [category values]), ... }
         """
         result = dict()
-        df_out = self._get_dataframe_of_out_transactions()
-        df_out_agg_years = df_out.groupby([df_out.index.year, self.CATEGORY_COL])[self.ABSAMOUNT_COL].sum()
+        df_out = self._formatter.get_out_transactions()
+        df_out_agg_years = df_out.groupby([df_out.index.year, config.CATEGORY_MAIN_COL])[config.ABSAMOUNT_COL].sum()
 
         years = list(df_out_agg_years.index.levels[0].values)
         for year in years:
@@ -83,24 +63,58 @@ class TransactionPreprocessor(object):
         return result
 
 
+    def calculate_month_summaries(self, months):
+
+        df_all = self._formatter.get_all_transactions()
+        df_agg_months = df_all.groupby([df_all.index.to_period('M'), config.CATEGORY_MAIN_COL])[
+            config.ABSAMOUNT_COL].sum().reset_index()
+
+        df_summaries = list()
+        for m in months:
+            end_month = df_agg_months[config.DATE_COL].max()
+            start_month = (end_month.to_timestamp() - pd.Timedelta(m - 1, unit='M')).to_period('M')
+
+            df_range = df_agg_months[df_agg_months[config.DATE_COL].between(start_month, end_month)]
+
+            df_prod = pd.DataFrame(list(product(df_range[config.DATE_COL].unique(), config.categories.keys())),
+                                   columns=[config.DATE_COL, config.CATEGORY_MAIN_COL])
+            df_range_full = df_prod.merge(df_range, how='left').fillna(0)
+
+            df_mean = df_range_full.groupby([config.CATEGORY_MAIN_COL])[config.ABSAMOUNT_COL].mean().reset_index()
+
+            # sort by category order as defined in config
+            configOrder = list(config.categories.keys())
+            df_mean['index'] = df_mean.apply(lambda row: configOrder.index(row[config.CATEGORY_MAIN_COL]) if row[config.CATEGORY_MAIN_COL] in configOrder else 1000,
+                                             axis=1)
+
+            total_out = df_mean[config.ABSAMOUNT_COL].sum() - df_mean.loc[
+                df_mean[config.CATEGORY_MAIN_COL] == config.INCOME_CATEGORY, config.ABSAMOUNT_COL]
+            df_mean = df_mean.append(
+                pd.Series({config.CATEGORY_MAIN_COL: config.EXPENSES_LABEL, config.ABSAMOUNT_COL: total_out, 'index': -2}),
+                ignore_index=True)
+            df_mean = df_mean.append(
+                pd.Series({config.CATEGORY_MAIN_COL: '-----', config.ABSAMOUNT_COL: None, 'index': -1}),
+                ignore_index=True)
+            df_mean.loc[df_mean[config.CATEGORY_MAIN_COL] == config.INCOME_CATEGORY, 'index'] = -3
+            df_mean = df_mean.sort_values(by=['index'])
+            df_summaries.append(df_mean)
+
+        return df_summaries
+
+
     def accumulate_categories(self):
         """
         Accumulates all transactions by category
         :return: [date range], { category1-name: [category1 values], ... }
         """
-        df_all = self._get_dataframe_of_all_transactions()
+        df_all = self._formatter.get_all_transactions()
         x_axis = list(map(lambda date: date, df_all.resample('D').sum().index))
         cumulative_categories = dict()
         for category_name in reversed(list(config.categories.keys())):
-            df_category = df_all if category_name == config.GAIN_CATEGORY else df_all[df_all.category == category_name]
+            df_category = df_all[df_all.main_category == category_name]
             df_category = df_category.resample('D').sum().reindex(df_all.index).resample('D').max().fillna(0)
 
-            agg_column = self.ABSAMOUNT_COL
-            if category_name == config.GAIN_CATEGORY:
-                df_category.loc[df_category.index.min(), config.AMOUNT_COL] += config.INITIAL_ACCOUNT_BALANCE
-                agg_column = config.AMOUNT_COL
-
-            values = list(df_category[agg_column].cumsum())
+            values = list(df_category[config.ABSAMOUNT_COL].cumsum())
             cumulative_categories[category_name] = values
 
         return (x_axis, cumulative_categories)
@@ -112,41 +126,17 @@ class TransactionPreprocessor(object):
         """
         RATIO = 'ratio'
         result = dict()
-        df = self._get_dataframe_of_all_transactions()
+        df = self._formatter.get_all_transactions()
         for category_name in config.categories.keys():
-            df_category = df[df.category == category_name]
-            category_total = df_category[self.ABSAMOUNT_COL].sum()
-            df_category.loc[:, RATIO] = df_category[self.ABSAMOUNT_COL] / category_total
+            df_category = df[df.main_category == category_name]
+            category_total = df_category[config.ABSAMOUNT_COL].sum()
+            df_category.loc[:, RATIO] = df_category[config.ABSAMOUNT_COL] / category_total
             x_axis = list(map(lambda datetime: pd.Timestamp(datetime), pd.DatetimeIndex(df_category.index).values))
             if x_axis:
                 result[category_name] = (x_axis,
-                                         df_category[self.ABSAMOUNT_COL].values,
+                                         df_category[config.ABSAMOUNT_COL].values,
                                          df_category[RATIO].values,
-                                         df_category[self.LABEL].values)
+                                         df_category[config.LABEL].values)
         return result
 
-    def _rebuild_dataframes(self):
-        # create DataFrame from imported transactions
-        ta_tuples = list(map(lambda ta: ta.as_tuple(), self._transactions))
-        self._df_all = pd.DataFrame.from_records(data=ta_tuples, columns=self._columns, index=config.DATE_COL)
-        self._df_all[self.ABSAMOUNT_COL] = self._df_all.amount.apply(abs)
-        self._df_all[self.LABEL] = self._df_all[config.PAYMENT_REASON_COL] + '<br>' + self._df_all[config.RECIPIENT_COL]
 
-        self._df_in = self._df_all[self._df_all.category == config.INCOME_CATEGORY]
-
-        self._df_out = self._df_all[self._df_all.category != config.INCOME_CATEGORY]
-
-    def _get_dataframe_of_all_transactions(self):
-        if self._df_all is None:
-            self._rebuild_dataframes()
-        return self._df_all
-
-    def _get_dataframe_of_in_transactions(self):
-        if self._df_in is None:
-            self._rebuild_dataframes()
-        return self._df_in
-
-    def _get_dataframe_of_out_transactions(self):
-        if self._df_out is None:
-            self._rebuild_dataframes()
-        return self._df_out

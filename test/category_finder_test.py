@@ -2,7 +2,7 @@ import unittest
 import datetime
 
 from expenses_report import config
-from expenses_report.category_finder import CategoryFinder
+from expenses_report.preprocessing.category_finder import CategoryFinder
 from expenses_report.transaction import Transaction
 
 

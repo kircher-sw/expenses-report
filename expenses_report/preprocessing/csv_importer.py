@@ -2,7 +2,7 @@ import csv
 import os
 import re
 
-from expenses_report import config
+from expenses_report.config import config
 from expenses_report import util
 from expenses_report.transaction import Transaction
 
@@ -26,7 +26,7 @@ class CsvImporter(object):
             column_indices = None
             for row in csv_reader:
                 if not column_indices: # first row with column names
-                    if len(row) >= len(config.import_mapping.keys()):
+                    if len(row) >= len(config.import_mapping.keys()) - 1:
                         column_indices = CsvImporter.build_column_mapping(row)
                         CsvImporter.verify_column_mapping(column_indices, filepath)
                 else:
@@ -76,6 +76,9 @@ class CsvImporter(object):
 
         if config.RECIPIENT_COL in column_indices:
             ta.recipient = re.sub(r'  +', ' ', row[column_indices[config.RECIPIENT_COL]].strip())
+
+        if config.OTHER_ACCOUNT_NO_COL in column_indices:
+            ta.set_other_account_no(row[column_indices[config.OTHER_ACCOUNT_NO_COL]].strip())
 
         return ta
 

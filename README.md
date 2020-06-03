@@ -37,7 +37,7 @@ For an interactive report demonstration see [sample/sample-report.html](https://
 
 ## Usage
 1. Clone repository
-1. Adapt the file [**expenses_report/config.py**](expenses_report/config.py)
+1. Adapt the file [**expenses_report/config.py**](expenses_report/config/config.py)
     * define the path to the folder which contains your CSV files (either absolute or relative to the project directory)
       ```python
       CSV_FILES_PATH = 'sample'

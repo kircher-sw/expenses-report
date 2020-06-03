@@ -4,14 +4,13 @@ Config for expenses-report
 Only modify text within '...'
 """
 
-
 # Path to the CSV files from your bank account. All CSV files from this path will be read and processed.
 CSV_FILES_PATH = 'sample'
 
 CSV_DELIMITER = ';'
 
 OUT_FILE = 'expenses-report.html'
-
+REPORT_TEMPLATE = 'expenses-report-layout.html'
 
 # CSV column identifiers (do not modify)
 ACCOUNT_NO_COL = 'accountno'
@@ -19,6 +18,12 @@ DATE_COL = 'date'
 AMOUNT_COL = 'amount'
 PAYMENT_REASON_COL = 'paymentreason'
 RECIPIENT_COL = 'recipient'
+OTHER_ACCOUNT_NO_COL = 'otheraccountno'
+
+CATEGORY_MAIN_COL = 'main_category'
+CATEGORY_SUB_COL = 'sub_category'
+ABSAMOUNT_COL = 'absamount'
+LABEL = 'label'
 
 # CSV column identification
 # Add the names of the CSV columns as a new element to each list. If you have CSV files from different bank accounts
@@ -29,15 +34,19 @@ import_mapping = {
     DATE_COL: ['Date', 'Valutadatum', 'Buchungstag', 'Valuta'],  # mandatory
     AMOUNT_COL: ['Amount', 'Betrag', 'Betrag (EUR)'],  # mandatory
     PAYMENT_REASON_COL: ['Payment Reason', 'Verwendungszweck'],  # optional if RECIPIENT_COL is set
-    RECIPIENT_COL: ['Recipient', 'Beguenstigter/Zahlungspflichtiger', 'Auftraggeber / Begünstigter', 'Name'],  # optional if PAYMENT_REASON_COL is set
+    RECIPIENT_COL: ['Recipient', 'Beguenstigter/Zahlungspflichtiger', 'Auftraggeber / Begünstigter', 'Name'],
+    # optional if PAYMENT_REASON_COL is set
+    OTHER_ACCOUNT_NO_COL: ['Kontonummer/IBAN'],
 }
 
 INITIAL_ACCOUNT_BALANCE = 0.0
 
+OWN_ACCOUNTS = set()
+
+EXPENSES_LABEL = 'Expenses'
+
 # Category name for income
 INCOME_CATEGORY = 'Income'
-
-GAIN_CATEGORY = 'Gain'
 
 # Label for all uncategorized transactions. This category is assigned if no matching keyword was found.
 MISC_CATEGORY = 'Misc'
@@ -46,17 +55,26 @@ MISC_CATEGORY = 'Misc'
 # Add or remove categories and define keywords for them as they occur in the PAYMENT_REASON or RECIPIENT field of
 # the transactions. (Don't add keywords for INCOME and MISC category)
 categories = {
-    INCOME_CATEGORY: None,
-    GAIN_CATEGORY: None,
-    'Dwelling': ['Rent', 'Miete', 'Rundfunk'],
-    'Car': ['Fuel', 'Garage', 'Kfz-Steuer', 'KFZ-VERSICHERUNG', 'Tankstelle', 'JET', 'Aral', 'Esso', 'Shell', 'Total'],
-    'Insurance': ['Insurance', 'HUK', 'HUK24'],
-    'Grocery': ['Grocery', 'REWE', 'Kaufland', 'Aldi', 'Edeka', 'Lidl'],
+    INCOME_CATEGORY: {
+        'Salary': ['Salary'],
+        MISC_CATEGORY: None
+    },
+
+    'Fixed costs': {
+        'Dwelling': ['Rent', 'Miete'],
+        'Insurances': ['Insurance', 'Allianz', 'HUK']
+    },
+
+    'Variable costs': {
+        'Supermarket': ['Grocery', 'REWE', 'Kaufland', 'Aldi', 'Edeka', 'Lidl'],
+        'Fuel': ['Fuel', 'JET', 'Aral', 'Esso', 'Shell', 'Total']
+    },
+
+    'Donations': ['unicef', 'Brot für die Welt'],
+
     MISC_CATEGORY: None,
 }
-
 
 # UI related settings
 CURRENCY_LABEL = 'EUR'
 INCOME_LINE_STYLE = dict(color=('rgb(22, 167, 96)'), width=4)
-GAIN_LINE_STYLE = dict(color=('rgb(10, 65, 190)'), width=3)

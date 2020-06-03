@@ -1,7 +1,7 @@
 import os
 import re
 
-from expenses_report import config
+from expenses_report.config import config
 
 class HtmlReport(object):
 
@@ -54,4 +54,5 @@ class HtmlReport(object):
         f = open(config.OUT_FILE, 'w')
         f.write(html_report)
         f.close()
+        print(f'\nReport created in {config.OUT_FILE}')
 
