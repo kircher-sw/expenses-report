@@ -1,7 +1,7 @@
 import unittest
 
 from expenses_report.argument_parser import ArgumentParser
-from expenses_report import config
+from expenses_report.config import config
 
 class TestArgumentParster(unittest.TestCase):
 

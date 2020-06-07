@@ -1,6 +1,6 @@
 
 from expenses_report.config import config
-from expenses_report.transaction import Transaction
+from expenses_report.preprocessing.transaction import Transaction
 
 
 class CategoryFinder(object):

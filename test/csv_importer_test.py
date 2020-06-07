@@ -1,6 +1,6 @@
 import unittest
 
-from expenses_report import config
+from expenses_report.config import config
 from expenses_report.preprocessing.csv_importer import CsvImporter
 
 

@@ -1,8 +1,9 @@
 import pandas as pd
 
 from expenses_report.config import config
+from itertools import product
 
-class DataFormatter(object):
+class DataProvider(object):
 
     _transactions = list()
     _columns = None
@@ -13,7 +14,7 @@ class DataFormatter(object):
 
     @staticmethod
     def load(transactions):
-        formatter = DataFormatter(transactions)
+        formatter = DataProvider(transactions)
         formatter._rebuild_dataframes()
         return formatter
 
@@ -43,26 +44,65 @@ class DataFormatter(object):
             self._rebuild_dataframes()
         return self._df_out
 
+
     def get_full_date_range(self, aggregation_period='MS'):
-        '''
-        Builds a dataframe containing the full date range of the specified period
+        """
+        Builds a DataFrame containing the full date range of the specified period
         :param aggregation_period: {'MS' for month start, 'YS' for year start, ... }, default 'MS'
             see https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects
         :return:
-        '''
+        """
+        period = DataProvider.as_period(aggregation_period)
         df_all = self.get_all_transactions()
-
-        delta_period = aggregation_period.rstrip('S') if len(aggregation_period) > 1 else aggregation_period
-
-        df_all_dates = pd.date_range(df_all.index.min() - pd.Timedelta(1, delta_period),
+        df_all_dates = pd.date_range(df_all.index.min().to_period(period).to_timestamp(), # sets to first day of period to include it in range
                                      df_all.index.max(),
                                      freq=aggregation_period,
                                      normalize=True).to_period().to_frame(name=config.DATE_COL)
         return df_all_dates
 
-    def aggregate_data(self, dataframe, aggregation_period='MS'):
+    def aggregate_dataframe(self, df, aggregation_period='MS') -> pd.DataFrame:
         df_all_dates = self.get_full_date_range(aggregation_period)
-        return dataframe.resample(aggregation_period).sum().reindex(df_all_dates.index.to_timestamp()).fillna(0)
+        df_agg = df.resample(aggregation_period).sum()
+        df_agg_full_range = df_agg.reindex(df_all_dates.index.to_timestamp()).fillna(0)
+        return df_agg_full_range
+
+    def aggregate_by_category_bak(self, df, aggregation_period, category_column, value_column):
+        values = dict()
+        df_all_dates = self.get_full_date_range(aggregation_period)
+        x_axis = list(df_all_dates.index.to_timestamp())
+        for category_name, df_category in df.groupby(category_column):
+            df_agg = self.aggregate_dataframe(df_category, aggregation_period)
+            values[category_name] = df_agg[value_column].values
+
+        return x_axis, values
+
+
+    def aggregate_by_category_as_tuple(self, df, aggregation_period, category_column, value_column):
+        df_agg = self.aggregate_by_category(df, aggregation_period, category_column, value_column)
+        return self.expand_by_categories(df_agg, category_column, value_column)
+
+    def aggregate_by_category(self, df, aggregation_period, category_column, value_column) -> pd.DataFrame:
+        df_all_dates = self.get_full_date_range(aggregation_period)
+        categories = df[category_column].unique()
+        df_prod = pd.DataFrame(list(product(df_all_dates[config.DATE_COL].unique(), categories)),
+                               columns=[config.DATE_COL, category_column])
+
+        period = DataProvider.as_period(aggregation_period)
+        df_agg = df.groupby([df.index.to_period(period), category_column])[value_column].sum().reset_index()
+        df_agg_full_range = df_prod.merge(df_agg, how='left').fillna(0)
+
+        return df_agg_full_range.set_index(config.DATE_COL)
+
+    def expand_by_categories(self, df, category_column, value_column):
+        x_axis = list(df.index.unique().to_timestamp())
+        values = dict()
+
+        categories = df[category_column].unique()
+        for category_name in categories:
+            values[category_name] = df.loc[df[category_column] == category_name, value_column].values
+
+        return x_axis, values
+
 
 
     @staticmethod
@@ -94,13 +134,7 @@ class DataFormatter(object):
         df_all_trees = df_all_trees.append(root_node, ignore_index=True)
         return df_all_trees
 
-    @staticmethod
-    def create_traces_for_groups(df, group_label, df_all_dates, value_column):
-        traces = dict()
-        x_axis = list(df_all_dates.index.to_timestamp())
-        for category_name, df_category in df.groupby(group_label):
-            df_result = pd.merge(df_all_dates, df_category, on=config.DATE_COL, how='left')
-            values_category = df_result.fillna(0)[value_column].values
-            traces[category_name] = values_category
 
-        return x_axis, traces
+    @staticmethod
+    def as_period(aggregation_period):
+        return aggregation_period.rstrip('S') if len(aggregation_period) > 1 else aggregation_period

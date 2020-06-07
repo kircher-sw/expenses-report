@@ -1,8 +1,8 @@
 import unittest
 from datetime import datetime
 
-from expenses_report import config
-from expenses_report.transaction import Transaction
+from expenses_report.config import config
+from expenses_report.preprocessing.transaction import Transaction
 from expenses_report.transaction_preprocessor import TransactionPreprocessor
 
 
@@ -34,7 +34,6 @@ class TestCsvImport(unittest.TestCase):
         self.assertEqual(3, len(x_axis))
         self.assertEqual(2, len(values_all_categories.keys()))
         self.assertListEqual([70.0, 0.0, 100.0], list(values_all_categories[config.INCOME_CATEGORY]))
-        self.assertListEqual([70.0, 0.0, 100.0], list(values_all_categories[config.GAIN_CATEGORY]))
 
 
     def test_aggregate_different_expenses_by_month(self):
@@ -74,7 +73,6 @@ class TestCsvImport(unittest.TestCase):
         self.assertListEqual([120.0, 0.0], list(values_all_categories[config.INCOME_CATEGORY]))
         self.assertListEqual([80.0, 0.0], list(values_all_categories[self.category1]))
         self.assertListEqual([100.0, 150.0], list(values_all_categories[self.category2]))
-        self.assertListEqual([-60.0, -150.0], list(values_all_categories[config.GAIN_CATEGORY]))
 
 
     def test_aggregate_expenses_by_year_with_total(self):

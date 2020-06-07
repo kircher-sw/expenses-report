@@ -2,7 +2,7 @@ import pandas as pd
 from itertools import product
 
 from expenses_report.config import config
-from expenses_report.preprocessing.data_formatter import DataFormatter
+from expenses_report.preprocessing.data_provider import DataProvider
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -11,7 +11,7 @@ class TransactionPreprocessor(object):
     _formatter = None
 
     def set_transactions(self, transactions):
-        self._formatter = DataFormatter.load(transactions)
+        self._formatter = DataProvider.load(transactions)
 
 
     def aggregate_transactions_by_category(self, aggregation_period='MS'):
@@ -22,23 +22,12 @@ class TransactionPreprocessor(object):
         :return: [date range], { category1-name: [category1 values], ... }
         """
 
-        # income
-        df_in = self._formatter.get_in_transactions()
-        df_in = self._formatter.aggregate_data(df_in, aggregation_period)
+        df_all = self._formatter.get_all_transactions()
+        x_axis, category_values = self._formatter.aggregate_by_category_as_tuple(df_all, aggregation_period,
+                                                                                 config.CATEGORY_MAIN_COL,
+                                                                                 config.ABSAMOUNT_COL)
 
-        # expenses
-        df_out = self._formatter.get_out_transactions()
-        period = aggregation_period.rstrip('S') if len(aggregation_period) > 1 else aggregation_period
-        df_out_agg = df_out.groupby([df_out.index.to_period(period), config.CATEGORY_MAIN_COL])[config.ABSAMOUNT_COL].sum()
-
-        df_all_dates = self._formatter.get_full_date_range(aggregation_period)
-        x_axis, out_traces = DataFormatter.create_traces_for_groups(df_out_agg, config.CATEGORY_MAIN_COL, df_all_dates, config.ABSAMOUNT_COL)
-
-        values_all_categories = dict()
-        values_all_categories[config.INCOME_CATEGORY] = df_in[config.ABSAMOUNT_COL].values
-        values_all_categories = {**values_all_categories, **out_traces}
-
-        return (x_axis, values_all_categories)
+        return x_axis, category_values
 
 
     def aggregate_expenses_by_year(self):
