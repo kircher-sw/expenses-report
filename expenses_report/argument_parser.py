@@ -1,7 +1,7 @@
 import argparse
 import re
 
-from expenses_report import config
+from expenses_report.config import config
 
 
 class ArgumentParser(object):
@@ -61,11 +61,6 @@ class ArgumentParser(object):
             config.INCOME_CATEGORY = args.income_category
             new_categories = config.categories.copy()
             print(f'set income category to "{config.INCOME_CATEGORY}"')
-        if args.gain_category:
-            del config.categories[config.GAIN_CATEGORY]
-            config.GAIN_CATEGORY = args.gain_category
-            new_categories = config.categories.copy()
-            print(f'set gain category to "{config.GAIN_CATEGORY}"')
         if args.misc_category:
             del config.categories[config.MISC_CATEGORY]
             config.MISC_CATEGORY = args.misc_category
@@ -103,6 +98,5 @@ class ArgumentParser(object):
     def _rebuild_categories_config(self, new_categories):
         config.categories.clear()
         config.categories[config.INCOME_CATEGORY] = None
-        config.categories[config.GAIN_CATEGORY] = None
         config.categories = {**config.categories, **new_categories}
         config.categories[config.MISC_CATEGORY] = None

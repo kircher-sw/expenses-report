@@ -14,9 +14,9 @@ class DataProvider(object):
 
     @staticmethod
     def load(transactions):
-        formatter = DataProvider(transactions)
-        formatter._rebuild_dataframes()
-        return formatter
+        instance = DataProvider(transactions)
+        instance._rebuild_dataframes()
+        return instance
 
 
     def _rebuild_dataframes(self):
@@ -60,49 +60,32 @@ class DataProvider(object):
                                      normalize=True).to_period().to_frame(name=config.DATE_COL)
         return df_all_dates
 
-    def aggregate_dataframe(self, df, aggregation_period='MS') -> pd.DataFrame:
-        df_all_dates = self.get_full_date_range(aggregation_period)
-        df_agg = df.resample(aggregation_period).sum()
-        df_agg_full_range = df_agg.reindex(df_all_dates.index.to_timestamp()).fillna(0)
-        return df_agg_full_range
 
-    def aggregate_by_category_bak(self, df, aggregation_period, category_column, value_column):
-        values = dict()
-        df_all_dates = self.get_full_date_range(aggregation_period)
-        x_axis = list(df_all_dates.index.to_timestamp())
-        for category_name, df_category in df.groupby(category_column):
-            df_agg = self.aggregate_dataframe(df_category, aggregation_period)
-            values[category_name] = df_agg[value_column].values
+    def aggregate_by_category_as_tuple(self, df, aggregation_period, category_column):
+        df_agg = self.aggregate_by_category(df, aggregation_period, category_column)
+        return self.expand_by_categories(df_agg, category_column)
 
-        return x_axis, values
-
-
-    def aggregate_by_category_as_tuple(self, df, aggregation_period, category_column, value_column):
-        df_agg = self.aggregate_by_category(df, aggregation_period, category_column, value_column)
-        return self.expand_by_categories(df_agg, category_column, value_column)
-
-    def aggregate_by_category(self, df, aggregation_period, category_column, value_column) -> pd.DataFrame:
+    def aggregate_by_category(self, df, aggregation_period, category_column) -> pd.DataFrame:
         df_all_dates = self.get_full_date_range(aggregation_period)
         categories = df[category_column].unique()
         df_prod = pd.DataFrame(list(product(df_all_dates[config.DATE_COL].unique(), categories)),
                                columns=[config.DATE_COL, category_column])
 
         period = DataProvider.as_period(aggregation_period)
-        df_agg = df.groupby([df.index.to_period(period), category_column])[value_column].sum().reset_index()
+        df_agg = df.groupby([df.index.to_period(period), category_column])[config.ABSAMOUNT_COL].sum().reset_index()
         df_agg_full_range = df_prod.merge(df_agg, how='left').fillna(0)
 
         return df_agg_full_range.set_index(config.DATE_COL)
 
-    def expand_by_categories(self, df, category_column, value_column):
+    def expand_by_categories(self, df, category_column):
         x_axis = list(df.index.unique().to_timestamp())
         values = dict()
 
         categories = df[category_column].unique()
         for category_name in categories:
-            values[category_name] = df.loc[df[category_column] == category_name, value_column].values
+            values[category_name] = df.loc[df[category_column] == category_name, config.ABSAMOUNT_COL].values
 
         return x_axis, values
-
 
 
     @staticmethod

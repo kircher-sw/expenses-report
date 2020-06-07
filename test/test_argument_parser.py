@@ -24,14 +24,14 @@ class TestArgumentParster(unittest.TestCase):
     def test_define_single_category(self):
         parser = ArgumentParser()
         parser.configure_script(['--category', 'Name: key1, key2, key3'])
-        self.assertEqual(4, len(config.categories.keys()))
+        self.assertEqual(3, len(config.categories.keys()))
         self.assertTrue('Name' in config.categories)
         self.assertListEqual(['key1', 'key2', 'key3'], config.categories['Name'])
 
     def test_define_multiple_categories(self):
         parser = ArgumentParser()
         parser.configure_script(self._build_args('--category Name:key1,key2,key3 --category Test:k1'))
-        self.assertEqual(5, len(config.categories.keys()))
+        self.assertEqual(4, len(config.categories.keys()))
         self.assertTrue('Name' in config.categories)
         self.assertTrue('Test' in config.categories)
         self.assertListEqual(['key1', 'key2', 'key3'], config.categories['Name'])

@@ -15,8 +15,7 @@ class MonthlyTrendVisualization(IVisualization):
     def prepare_data(self, data: DataProvider):
         df_all = data.get_all_transactions()
         df_agg_months = data.aggregate_by_category(df_all, 'MS',
-                                                   config.CATEGORY_MAIN_COL,
-                                                   config.ABSAMOUNT_COL)
+                                                   config.CATEGORY_MAIN_COL)
 
         self._prepare_data_monthly_chart(data, df_agg_months)
         self._prepare_data_average_table(df_agg_months.reset_index())
@@ -31,8 +30,7 @@ class MonthlyTrendVisualization(IVisualization):
 
     def _prepare_data_monthly_chart(self, data: DataProvider, df_agg_months: pd.DataFrame):
         self._x_axis, self._category_values = data.expand_by_categories(df_agg_months,
-                                                                        config.CATEGORY_MAIN_COL,
-                                                                        config.ABSAMOUNT_COL)
+                                                                        config.CATEGORY_MAIN_COL)
 
 
     def _prepare_data_average_table(self, df_agg_months: pd.DataFrame):
