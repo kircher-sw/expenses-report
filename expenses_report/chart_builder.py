@@ -169,7 +169,7 @@ class ChartBuilder(object):
 
         ChartBuilder._add_range_slider(figure)
 
-        return ChartBuilder._create_plot(figure)
+        return figure
 
 
     @staticmethod
@@ -297,5 +297,5 @@ class ChartBuilder(object):
         figure.layout.update(sliders=[slider])
 
     @staticmethod
-    def _create_plot(figure):
+    def create_plot(figure):
         return plotly.offline.plot(figure, output_type='div', include_plotlyjs=False)

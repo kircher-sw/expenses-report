@@ -17,27 +17,23 @@ from expenses_report.visualizations.transaction_table_visualization import Trans
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
-class ExpensesReport(object):
-    _transactions = list()
-    _data_provider: DataProvider
-    _charts = list()
+_transactions: list
+_data_provider: DataProvider
+_html_plots: list
 
-    def transactions_updated(self):
-        self._data_provider = DataProvider.load(self._transactions)
-
-
-_expenses_report = ExpensesReport()
 
 def configure_script():
     parser = ArgumentParser()
     parser.configure_script()
 
+
 def import_csv_files():
     importer = CsvImporter()
     transactions = importer.import_from_csv_files()
     transactions = remove_internal_transactions(transactions)
-    _expenses_report._transactions = transactions
 
+    global _transactions
+    _transactions = transactions
 
 def remove_internal_transactions(transactions):
     own_account_numbers = set(map(lambda ta: ta.account_no, transactions)) | config.OWN_ACCOUNTS
@@ -45,13 +41,16 @@ def remove_internal_transactions(transactions):
     #internal_transactions = set(transactions) - set(clean_transactions)
     return clean_transactions
 
+
 def assign_category_to_transactions():
-    transactions = _expenses_report._transactions
+    global _transactions
+    transactions = _transactions
     category_finder = CategoryFinder()
     category_finder.assign_category(transactions)
-    _expenses_report.transactions_updated()
-    print_transactions_statistics(transactions)
 
+    global _data_provider
+    _data_provider = DataProvider.load(transactions)
+    print_transactions_statistics(transactions)
 
 def print_transactions_statistics(transactions):
     print('-----------------')
@@ -66,7 +65,7 @@ def print_transactions_statistics(transactions):
     pd.set_option('display.max_columns', None)
     pd.set_option('display.max_rows', None)
     pd.set_option('display.width', 2000)
-    df_all = _expenses_report._data_provider.get_all_transactions()
+    df_all = _data_provider.get_all_transactions()
 
     #print(df_all.sort_values(by=[config.CATEGORY_MAIN_COL, config.CATEGORY_SUB_COL]))
 
@@ -76,7 +75,6 @@ def print_transactions_statistics(transactions):
 
 
 def calculate_charts():
-
     visualizations = [MonthlyTrendVisualization(),
                       MonthlySubcategoriesVisualization(),
                       AnnualTrendVisualization(),
@@ -85,12 +83,11 @@ def calculate_charts():
                       AccumulatedTrendVisualization(),
                       TransactionTableVisualization()]
 
-    data = _expenses_report._data_provider
-    charts = list(map(lambda vis: vis.build(data), visualizations))
-    html_plots = list(map(lambda chart: ChartBuilder._create_plot(chart), charts))
-
-    _expenses_report._charts = html_plots
+    global _data_provider, _html_plots
+    charts = list(map(lambda vis: vis.build(_data_provider), visualizations))
+    _html_plots = list(map(lambda chart: ChartBuilder.create_plot(chart), charts))
 
 
 def write_report():
-    HtmlReport.create(_expenses_report._charts)
+    global _html_plots
+    HtmlReport.create(_html_plots)
