@@ -1,18 +1,16 @@
 import math
 import plotly
-#import plotly.graph_objs as go
 import plotly.graph_objects as go
 import plotly.subplots as sp
 
 from expenses_report.config import config
-from expenses_report.preprocessing.data_formatter import DataFormatter
+from expenses_report.preprocessing.data_provider import DataProvider
 
 
 class ChartBuilder(object):
 
     @staticmethod
     def create_trend_chart_with_table(x_axis, values_all_categories, df_summaries, show_range_selectors=False):
-        figure = go.Figure()
         figure = sp.make_subplots(rows=1, cols=2,
                                   column_widths=[0.3, 0.7],
                                   horizontal_spacing=0.08,
@@ -76,7 +74,7 @@ class ChartBuilder(object):
         if show_range_selectors:
             ChartBuilder._add_time_span_selectors(figure)
 
-        return ChartBuilder._create_plot(figure)
+        return figure
 
     @staticmethod
     def create_stacked_area_plot(x_axis, values_all_categories, show_range_selectors=False):
@@ -102,7 +100,7 @@ class ChartBuilder(object):
         if show_range_selectors:
             ChartBuilder._add_time_span_selectors(figure)
 
-        return ChartBuilder._create_plot(figure)
+        return figure
 
 
     @staticmethod
@@ -128,7 +126,7 @@ class ChartBuilder(object):
         if show_range_selectors:
             ChartBuilder._add_time_span_selectors(figure)
 
-        return ChartBuilder._create_plot(figure)
+        return figure
 
 
     @staticmethod
@@ -152,7 +150,7 @@ class ChartBuilder(object):
         ChartBuilder._add_time_span_selectors(figure)
         figure.layout.update(yaxis=dict(type='log', range=[0, math.ceil(math.log10(max_value))]))
 
-        return ChartBuilder._create_plot(figure)
+        return figure
 
 
     @staticmethod
@@ -171,7 +169,7 @@ class ChartBuilder(object):
 
         ChartBuilder._add_range_slider(figure)
 
-        return ChartBuilder._create_plot(figure)
+        return figure
 
 
     @staticmethod
@@ -182,11 +180,11 @@ class ChartBuilder(object):
         figure = go.Figure()
         for year in list(dataframe[config.DATE_COL].unique()):
             df_year = dataframe.loc[dataframe[config.DATE_COL] == year, :]
-            df_all_trees = DataFormatter.build_hierarchical_dataframe(df_year,
-                                                                      str(year),
-                                                                      [config.CATEGORY_SUB_COL, config.CATEGORY_MAIN_COL],
-                                                                      config.ABSAMOUNT_COL,
-                                                                      color_map)
+            df_all_trees = DataProvider.build_hierarchical_dataframe(df_year,
+                                                                     str(year),
+                                                                     [config.CATEGORY_SUB_COL, config.CATEGORY_MAIN_COL],
+                                                                     config.ABSAMOUNT_COL,
+                                                                     color_map)
 
             figure.add_trace(go.Sunburst(labels=df_all_trees['id'],
                                           parents=df_all_trees['parent'],
@@ -198,18 +196,19 @@ class ChartBuilder(object):
                                           name=str(year)))
 
         ChartBuilder._add_range_slider(figure)
-        return ChartBuilder._create_plot(figure)
+        return figure
 
 
     @staticmethod
-    def create_table(dataframe):
+    def create_table(dataframe, header_labels):
+        dataframe[config.DATE_COL] = dataframe[config.DATE_COL].apply(lambda date: date.strftime('%Y-%m-%d'))
+        colCount = len(dataframe.columns)
         figure = go.Figure()
-        figure.add_trace(go.Table(header=dict(values=['Category', 'Average'],
-                                               align='left'),
-                                   cells=dict(values=[dataframe[k].tolist() for k in dataframe.columns],
-                                              align=['left', 'right'],
-                                              format=[None, '.2f'])))
-        return ChartBuilder._create_plot(figure)
+        figure.add_trace(go.Table(header=dict(values=[f'<b>{h}</b>' for h in header_labels], align='left'),
+                                  cells=dict(values=[dataframe[k] for k in dataframe.columns],
+                                             align=['left'] * (colCount-1) + ['right'],
+                                             format=[None] * (colCount-1) + ['.2f'])))
+        return figure
 
 
     @staticmethod
@@ -298,5 +297,5 @@ class ChartBuilder(object):
         figure.layout.update(sliders=[slider])
 
     @staticmethod
-    def _create_plot(figure):
+    def create_plot(figure):
         return plotly.offline.plot(figure, output_type='div', include_plotlyjs=False)

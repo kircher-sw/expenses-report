@@ -1,9 +1,9 @@
 import unittest
 import datetime
 
-from expenses_report import config
+from expenses_report.config import config
 from expenses_report.preprocessing.category_finder import CategoryFinder
-from expenses_report.transaction import Transaction
+from expenses_report.preprocessing.transaction import Transaction
 
 
 class TestCategoryFinder(unittest.TestCase):
@@ -19,25 +19,25 @@ class TestCategoryFinder(unittest.TestCase):
         ta = Transaction('123456', datetime.datetime.now(), 100, 'salary', '', '')
         finder = CategoryFinder()
         finder.assign_category([ta])
-        self.assertEqual(config.INCOME_CATEGORY, ta.category)
+        self.assertEqual(config.INCOME_CATEGORY, ta.main_category)
 
     def test_transaction_with_payment_reason_expect_car_category(self):
         ta = Transaction('123456', datetime.datetime.now(), -30, 'Fuel', '', '')
         finder = CategoryFinder()
         finder.assign_category([ta])
-        self.assertEqual('Car', ta.category)
+        self.assertEqual('Car', ta.main_category)
 
     def test_transaction_with_recipient_expect_car_category(self):
         ta = Transaction('123456', datetime.datetime.now(), -30, '', 'Aral', '')
         finder = CategoryFinder()
         finder.assign_category([ta])
-        self.assertEqual('Car', ta.category)
+        self.assertEqual('Car', ta.main_category)
 
     def test_transaction_without_matching_keyword_expect_misc_category(self):
         ta = Transaction('123456', datetime.datetime.now(), -40, 'Shoes', 'Amazon', '')
         finder = CategoryFinder()
         finder.assign_category([ta])
-        self.assertEqual(config.MISC_CATEGORY, ta.category)
+        self.assertEqual(config.MISC_CATEGORY, ta.main_category)
 
 
 if __name__ == '__main__':
