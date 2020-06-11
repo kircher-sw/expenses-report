@@ -18,7 +18,9 @@ class MonthlySubcategoriesVisualization(IVisualization):
             df_cat = df_all.loc[
                 df_all[config.CATEGORY_MAIN_COL] == main_category, [config.CATEGORY_SUB_COL, config.ABSAMOUNT_COL]]
 
-            self._x_axis, sub_category_values = data.aggregate_by_category_as_tuple(df_cat, 'MS', config.CATEGORY_SUB_COL)
+            self._x_axis, sub_category_values = data.aggregate_by_category_as_tuple(df_cat, 'MS',
+                                                                                    config.CATEGORY_SUB_COL,
+                                                                                    main_category)
             self._main_category_values[main_category] = sub_category_values
 
     def build_visualization(self) -> go.Figure:
