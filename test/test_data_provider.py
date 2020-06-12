@@ -33,7 +33,7 @@ class TestCsvImport(unittest.TestCase):
                                                                                config.CATEGORY_MAIN_COL)
 
         self.assertEqual(3, len(x_axis))
-        self.assertEqual(1, len(category_values.keys()))
+        self.assertEqual(3, len(category_values.keys()))
         self.assertListEqual([70.0, 0.0, 100.0], list(category_values[config.INCOME_CATEGORY]))
 
 
@@ -51,7 +51,7 @@ class TestCsvImport(unittest.TestCase):
         x_axis, category_values = data_provider.aggregate_by_category_as_tuple(df_all, 'MS', config.CATEGORY_MAIN_COL)
 
         self.assertEqual(4, len(x_axis))
-        self.assertEqual(2, len(category_values.keys()))
+        self.assertEqual(3, len(category_values.keys()))
         self.assertListEqual([20.0, 30.0, 0.0, 0.0], list(category_values[self.category1]))
         self.assertListEqual([50.0, 0.0, 0.0, 250.0], list(category_values[self.category2]))
 

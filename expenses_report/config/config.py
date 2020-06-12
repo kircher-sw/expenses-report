@@ -9,7 +9,7 @@ CSV_FILES_PATH = 'sample'
 
 CSV_DELIMITER = ';'
 
-OUT_FILE = 'expenses-report.html'
+OUT_FILE = 'sample/sample-report.html'
 REPORT_TEMPLATE = 'expenses-report-layout.html'
 
 # CSV column identifiers (do not modify)

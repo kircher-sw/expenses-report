@@ -61,13 +61,13 @@ class DataProvider(object):
         return df_all_dates
 
 
-    def aggregate_by_category_as_tuple(self, df, aggregation_period, category_column):
-        df_agg = self.aggregate_by_category(df, aggregation_period, category_column)
+    def aggregate_by_category_as_tuple(self, df, aggregation_period, category_column, category_root=None):
+        df_agg = self.aggregate_by_category(df, aggregation_period, category_column, category_root)
         return self.expand_by_categories(df_agg, category_column)
 
-    def aggregate_by_category(self, df, aggregation_period, category_column) -> pd.DataFrame:
+    def aggregate_by_category(self, df, aggregation_period, category_column, category_root=None) -> pd.DataFrame:
         df_all_dates = self.get_full_date_range(aggregation_period)
-        categories = df[category_column].unique()
+        categories = self._get_categories_for_level(category_root) # df[category_column].unique()
         df_prod = pd.DataFrame(list(product(df_all_dates[config.DATE_COL].unique(), categories)),
                                columns=[config.DATE_COL, category_column])
 
@@ -87,6 +87,18 @@ class DataProvider(object):
 
         return x_axis, values
 
+
+    def _get_categories_for_level(self, root):
+        categories = None
+        if root is None:
+            categories = list(config.categories.keys())
+
+        elif root in config.categories.keys():
+            sub_categories = config.categories[root]
+            if type(sub_categories) is dict:
+                categories = list(sub_categories.keys())
+
+        return categories or [config.MISC_CATEGORY]
 
     @staticmethod
     def build_hierarchical_dataframe(df, root_label, levels, value_column, color_map):
