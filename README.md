@@ -1,3 +1,5 @@
+![](https://github.com/kircher-sw/expenses-report/workflows/Python%20Unittests/badge.svg)
+
 # expenses-report
 Keeps track of your personal expenses.
 * visualizes your expenses by self defined categories
