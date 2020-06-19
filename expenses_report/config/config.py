@@ -53,7 +53,7 @@ MISC_CATEGORY = 'Misc'
 
 # Mapping of categories and their keywords.
 # Add or remove categories and define keywords for them as they occur in the PAYMENT_REASON or RECIPIENT field of
-# the transactions. (Don't add keywords for INCOME and MISC category)
+# the transactions. (Don't add keywords for MISC category)
 categories = {
     INCOME_CATEGORY: {
         'Salary': ['Salary'],

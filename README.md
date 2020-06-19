@@ -3,8 +3,7 @@
 # expenses-report
 Keeps track of your personal expenses.
 * visualizes your expenses by self defined categories
-* reads transactions from CSV files exported from your bank account
-* automatically assigns categories to your expenses
+* automatically categorizes transactions imported form CSV files
 * outputs an interactive html report
 
 ---
@@ -17,12 +16,14 @@ Keeps track of your personal expenses.
 ---
 
 ## Requirements
-* <a href="https://www.python.org/downloads" target="_blank">Python</a> >= 3.6
-* <a href="https://pandas.pydata.org/pandas-docs/stable/install.html#installing-from-pypi" target="_blank">Pandas</a> >= 0.24.2
-* <a href="https://plot.ly/python/getting-started/#installation" target="_blank">Plotly</a> >= 3.8.1
+* <a href="https://www.python.org/downloads" target="_blank">Python 3</a> (3.6 or later)
+* install dependent packages with
+  ```
+  pip install -r requirements.txt
+  ```
 
 ## Example
-For an interactive report demonstration see [sample/sample-report.html](https://kircher-sw.github.io/expenses-report/sample/sample-report.html)
+Interactive demo report: [sample/sample-report.html](https://kircher-sw.github.io/expenses-report/sample/sample-report.html)
 
 ### Monthly expenses
 ![Categories by month](sample/category-month.png "expenses-report Categories by month")
@@ -55,7 +56,10 @@ For an interactive report demonstration see [sample/sample-report.html](https://
       ```python
       categories = {
         ...
-        'Car': ['Fuel', 'Garage', ...],
+        'Fixed costs': {
+          'Dwelling': ['Rent'],
+          'Insurances': ['Insurance', 'Allianz', 'HUK']
+        },
         ...
       }
       ```
